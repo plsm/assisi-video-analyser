@@ -12,5 +12,7 @@ PKGCONFIG = opencv
 
 # Input
 HEADERS += animate.hpp qcustomplot.h
+HEADERS += process-image.hpp
 FORMS += video-analyser.ui
 SOURCES += animate.cpp main.cpp qcustomplot.cpp
+SOURCES += process-image.cpp
