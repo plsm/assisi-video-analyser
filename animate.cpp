@@ -14,6 +14,8 @@ using namespace std;
 
 QVector<double> Animate::X_COLOURS (NUMBER_COLOUR_LEVELS);
 
+QImage Mat2QImage (const cv::Mat &src);
+
 void Animate::init ()
 {
 	for (int i = 0; i < NUMBER_COLOUR_LEVELS; i++) {
@@ -36,13 +38,6 @@ Animate::Animate (string folder, string frameFileType, Ui_MainWindow *mainWindow
 {
 	this->scene = new QGraphicsScene ();
 	this->mainWindow->frameView->setScene (this->scene);
-	// this->mainWindow->histogramView->addGraph ();
-	// this->mainWindow->histogramView->addGraph ();
-	// QVector<double> y (256);
-	// for (int i = 0; i < 256; i++) {
-	// 	y [i] = 0;
-	// }
-	// this->mainWindow->histogramView->graph (0)->setData (X_COLOURS, y);
 }
 
 void Animate::setup ()
@@ -57,13 +52,7 @@ void Animate::update ()
 	cout << "void Animate::update ()\n";
 	string frame_path = this->getFramePath ();
 	if (access (frame_path.c_str (), R_OK) == 0) {
-		QPixmap image;
-		image.load (frame_path.c_str ());
-		if (this->imageItem != NULL) {
-			this->scene->removeItem (this->imageItem);
-		}
-		this->imageItem = this->scene->addPixmap (image);
-		this->mainWindow->frameView->update ();
+		this->updateFrame ();
 		this->updateHistogram ();
 		this->mainWindow->currentFrameSpinBox->setValue (this->indexFrame);
 		this->indexFrame += 1;
@@ -86,10 +75,9 @@ void Animate::updateFrame ()
 	else if (this->mainWindow->showDiffPreviousRadioButton->isChecked ()) {
 	}
 	else if (this->mainWindow->showDiffBackgroundRadioButton->isChecked ()) {
-		string frame_path = this->getFramePath ();
-		image.load (frame_path.c_str ());
-		image = image - this->backgroundImage;
-		image = cv::abs (image);
+		cv::Mat diff = compute_difference_background_image (this->folder, this->frameFileType, this->indexFrame);
+		QImage _image = Mat2QImage (diff);
+		image = QPixmap::fromImage (_image);
 	}
 	if (this->imageItem != NULL) {
 		this->scene->removeItem (this->imageItem);
@@ -108,45 +96,6 @@ void Animate::updateHistogram ()
 		this->mainWindow->histogramView->graph (1)->setData (X_COLOURS, *histogram);
 	}
 	this->mainWindow->histogramView->replot ();
-}
-
-void Animate::updateHistogram (const string &framePath)
-{
-	cv::Mat image = cv::imread (framePath, CV_LOAD_IMAGE_GRAYSCALE);
-	// Quantize the saturation to 32 levels
-	int sbins = 256;
-	int histSize[] = {sbins};
-	// saturation varies from 0 (black-gray-white) to
-	// 255 (pure spectrum color)
-	float sranges[] = { 0, 256 };
-	const float* ranges[] = { sranges };
-	cv::MatND histogram;
-	// we compute the histogram from the 0-th
-	int channels[] = {0};
-	cv::calcHist (&image, 1, channels, cv::Mat (), // do not use mask
-             histogram, 1, histSize, ranges,
-             true, // the histogram is uniform
-             false);
-	QVector<double> x (256), y (256);
-	double maxCount = 0;
-	for (int i = 0; i < 256; i++) {
-		x [i] = i;
-		y [i] = histogram.at<float> (i);
-		maxCount = std::max (maxCount, y [i]);
-	}
-	this->mainWindow->histogramView->graph (0)->setData (x, y);
-	this->mainWindow->histogramView->yAxis->setRange (0, maxCount);
-	this->mainWindow->histogramView->replot ();
-
-
-	// cout << "Histogram of " << framePath << " contains " << histogram.total () << " elements\n"
-	// 	<< "The number of rows is " << histogram.rows << " and the number of columns is " << histogram.cols << "\n";
-	cout << "Histogram is:\n";
-	for (unsigned int i = 0; i < 256; i++)
-		cout << " " << histogram.at<float> (i);
-	cout << "\n";
-
-	// this->mainWindow->histogramView
 }
 
 void Animate::playStop ()
@@ -185,4 +134,16 @@ string Animate::getFramePath () const
 	result += ".";
 	result += this->frameFileType;
 	return result;
+}
+
+QImage Mat2QImage (const cv::Mat &src)
+{
+	QImage dest (src.rows, src.cols, QImage::Format_ARGB32);
+	for (int y = 0; y < src.rows; ++y) {
+		for (int x = 0; x < src.cols; ++x) {
+			unsigned int color = src.at<unsigned char> (x, y);
+			dest.setPixel (y, x, qRgba (color, color, color, 255));
+		}
+	}
+	return dest;
 }

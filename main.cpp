@@ -13,12 +13,13 @@ void setup (const string &folder, const string &frame_file_type, Ui_MainWindow &
 
 int main( int argc, char **argv )
 {
-	QApplication a( argc, argv );
+	QApplication a (argc, argv);
 	QMainWindow mainWindow;
 	Animate::init ();
 	Ui_MainWindow ui;
 
 	ui.setupUi (&mainWindow);
+	Parameters parameters (argc, argv);
 	string folder ("/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_770-amp_40-pause_420/run-files_frequency=770Hz_amplitude=40_vibration-period=580ms_pause-period=420ms_R#2/");
 	string frame_file_type ("jpg");
 	Animate animate (folder, "jpg", &ui);
@@ -27,6 +28,7 @@ int main( int argc, char **argv )
 	mainWindow.show ();
 	QObject::connect (ui.playStopButton, SIGNAL (clicked ()), &animate, SLOT (playStop ()));
 	QObject::connect (ui.updateRectPushButton, SIGNAL (clicked ()), &animate, SLOT (updateHistogramsRect ()));
+	compute_pixel_count_difference_raw (parameters);
 	return a.exec();
 }
 
@@ -34,7 +36,6 @@ void setup (const string &folder, const string &frame_file_type, Ui_MainWindow &
 {
 	string filename = folder + "/background." + frame_file_type;
 	cv::Mat image = cv::imread (filename, CV_LOAD_IMAGE_GRAYSCALE);
-	fprintf (stderr, "The size of the background image (and the video frames) is %d x %d\n", image.size ().width, image.size ().height);
 	QSpinBox *horizontal_spinBoxes[] = {mainWindow.x1SpinBox, mainWindow.x2SpinBox};
 	QSpinBox *vertical_spinBoxes[] = {mainWindow.y1SpinBox, mainWindow.y2SpinBox};
 	for (int i = 0; i < 2; i++) {
