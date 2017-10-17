@@ -8,15 +8,18 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 CONFIG += link_pkgconfig
-PKGCONFIG = opencv 
+PKGCONFIG = opencv yaml-cpp
 
 # Input
 HEADERS += animate.hpp qcustomplot.h
 HEADERS += process-image.hpp
 HEADERS += parameters.hpp
 HEADERS += util.hpp
+HEADERS += image.hpp
 FORMS += video-analyser.ui
 SOURCES += animate.cpp main.cpp qcustomplot.cpp
 SOURCES += process-image.cpp
 SOURCES += parameters.cpp
 SOURCES += util.cpp
+SOURCES += image.cpp
+SOURCES += arena.cpp

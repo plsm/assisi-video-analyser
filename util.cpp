@@ -2,6 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "util.hpp"
+#include "image.hpp"
 #include "process-image.hpp"
 
 void print_image (const cv::Mat &image, const char *name)
@@ -21,7 +22,7 @@ void print_image (const cv::Mat &image, const char *name)
 void print_histogram (const QVector<double> &histogram, const char *name)
 {
 	fprintf (stderr, "Histogram of %s\n  ", name);
-	for (int i = 0; i < NUMBER_COLOUR_LEVELS; i++)
+	for (unsigned int i = 0; i < NUMBER_COLOUR_LEVELS; i++)
 		fprintf (stderr, " %f", histogram [i]);
 	fprintf (stderr, "\n");
 }
@@ -35,6 +36,8 @@ cv::Mat modulo_difference (const cv::Mat &a, const cv::Mat &b)
 				result.at<unsigned char> (x, y) -= b.at<unsigned char> (x, y);
 			else if (a.at<unsigned char> (x, y) < b.at<unsigned char> (x, y))
 				result.at<unsigned char> (x, y) = b.at<unsigned char> (x, y) - result.at<unsigned char> (x, y);
+			else
+				result.at<unsigned char> (x, y) = 0;
 		}
 	}
 	return result;
@@ -43,7 +46,7 @@ cv::Mat modulo_difference (const cv::Mat &a, const cv::Mat &b)
 int number_different_pixels (const Parameters &parameters, const QVector<double> &histogram)
 {
 	int result = 0;
-	for (int i = parameters.same_colour_level; i < NUMBER_COLOUR_LEVELS; i++)
+	for (unsigned int i = parameters.same_colour_level; i < NUMBER_COLOUR_LEVELS; i++)
 		result += histogram [i];
 	return result;
 }

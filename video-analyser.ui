@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>906</width>
+    <width>1190</width>
     <height>834</height>
    </rect>
   </property>
@@ -42,7 +42,26 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="plotView" native="true"/>
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="currentIndex">
+           <number>2</number>
+          </property>
+          <widget class="QCustomPlot" name="plotNumberBeesView">
+           <attribute name="title">
+            <string>number bees</string>
+           </attribute>
+          </widget>
+          <widget class="QCustomPlot" name="plotBeeSpeedView">
+           <attribute name="title">
+            <string>bee speed</string>
+           </attribute>
+          </widget>
+          <widget class="QCustomPlot" name="plotColourView">
+           <attribute name="title">
+            <string>frame histogram</string>
+           </attribute>
+          </widget>
+         </widget>
         </widget>
        </item>
       </layout>
@@ -131,6 +150,13 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="cropToRectCheckBox">
+            <property name="text">
+             <string>crop to rectangle</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -231,7 +257,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QDoubleSpinBox" name="framesPerSecondSpinBox"/>
+           <widget class="QDoubleSpinBox" name="framesPerSecondSpinBox">
+            <property name="minimum">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
