@@ -15,6 +15,7 @@ static QImage Mat2QImage (const cv::Mat &src);
 
 VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	experiment (experiment),
+	animate (experiment.parameters, &ui),
 	imageItem (NULL),
 	scene (new QGraphicsScene ()),
 	current_frame_line (3)
@@ -113,6 +114,8 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.histogramEqualisationCheckBox, SIGNAL (stateChanged (int)), this, SLOT (histogram_equalisation (int)));
 	QObject::connect (ui.currentFrameSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_data (int)));
 	QObject::connect (ui.updateRectPushButton, SIGNAL (clicked ()), this, SLOT (update_rect_data ()));
+	QObject::connect (ui.playStopButton, SIGNAL (clicked ()), &this->animate, SLOT (play_stop ()));
+	QObject::connect (ui.framesPerSecondSpinBox, SIGNAL (valueChanged (double)), &this->animate, SLOT (update_playback_speed (double)));
 	//
 	this->user_parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	this->update_data (this->ui.currentFrameSpinBox->value ());
@@ -186,42 +189,6 @@ void VideoAnalyser::update_rect_data ()
 	this->ui.plotColourView->graph (0)->setData (this->experiment.X_FRAMES, *this->experiment.highest_colour_level_frames_rect);
 	this->ui.plotColourView->replot ();
 }
-
-// void VideoAnalyser::update_displayed_frame (bool checked)
-// {
-// 	cout << "void VideoAnalyser::update_displayed_frame (bool checked = " << checked << ")\n";
-// 	if (!checked) {cout << "Olha!\n"; return ;}
-// 	QPixmap image;
-// 	// what we are going to display?
-// 	if (this->ui.showVideoFrameRadioButton->isChecked ()) {
-// 		image.load (this->experiment.parameters.frame_filename (this->ui.currentFrameSpinBox->value ()).c_str ());
-// 	}
-// 	else if (this->ui.showDiffPreviousRadioButton->isChecked () && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame) {
-// 		cv::Mat diff = compute_difference_previous_image (this->experiment.parameters, this->user_parameters, this->ui.currentFrameSpinBox->value ());
-// 		image = QPixmap::fromImage (Mat2QImage (diff));
-// 	}
-// 	else if (this->ui.showDiffBackgroundRadioButton->isChecked ()) {
-// 		cv::Mat diff = compute_difference_background_image (this->experiment.parameters, this->user_parameters, this->ui.currentFrameSpinBox->value ());
-// 		QImage _image = Mat2QImage (diff);
-// 		image = QPixmap::fromImage (_image);
-// 	}
-// 	else if (this->ui.specialOperationRadioButton->isChecked () && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame) {
-// 		cv::Mat _image = compute_threshold_mask_diff_background_diff_previous (this->experiment.parameters, this->ui.currentFrameSpinBox->value ());
-// 		image = QPixmap::fromImage (Mat2QImage (_image));
-// 	}
-// 	// update widget
-// 	if (this->imageItem != NULL) {
-// 		this->scene->removeItem (this->imageItem);
-// 	}
-// 	if (this->ui.cropToRectCheckBox->isChecked ())
-// 		image = image.copy (
-// 		 this->ui.x1SpinBox->value (),
-// 		 this->ui.y1SpinBox->value (),
-// 		 this->ui.x2SpinBox->value () - this->ui.x1SpinBox->value (),
-// 		 this->ui.y2SpinBox->value () - this->ui.y1SpinBox->value ());
-// 	this->imageItem = this->scene->addPixmap (image);
-// 	this->ui.frameView->update ();
-// }
 
 void VideoAnalyser::update_image (int current_frame)
 {

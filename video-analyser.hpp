@@ -12,6 +12,7 @@
 
 #include "experiment.hpp"
 #include "ui_video-analyser.h"
+#include "animate.hpp"
 
 class VideoAnalyser:
 	public QMainWindow
@@ -29,6 +30,7 @@ public slots:
 	void crop_to_rect ();
 	void update_rect_data ();
 private:
+	Animate animate;
 	QGraphicsItem *imageItem;
 	QGraphicsScene *scene;
 	std::vector<QCPItemLine *> current_frame_line;
