@@ -145,7 +145,7 @@ public:
 	}
 };
 
-typedef enum {CURRENT_FRAME, DIFF_BACKGROUND_IMAGE, DIFF_PREVIOUS_IMAGE, SPECIAL_DATA} FrameData;
+typedef enum {CURRENT_FRAME, DIFF_BACKGROUND_IMAGE, DIFF_PREVIOUS_IMAGE, SPECIAL_DATA} ImageData;
 
 /**
  * Parameters that the user can set and that affect image processing functions.
@@ -154,7 +154,7 @@ class UserParameters
 {
 public:
 	bool equalize_histograms;
-	FrameData data_2_view;
+	ImageData image_data;
 };
 
 #endif

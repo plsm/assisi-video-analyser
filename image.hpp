@@ -9,6 +9,9 @@
 
 extern const unsigned int NUMBER_COLOUR_LEVELS;
 
+typedef QVector<double> Histogram;
+typedef cv::Mat Image;
+
 inline cv::Mat read_image (const std::string &filename)
 {
 	return cv::imread (filename, CV_LOAD_IMAGE_GRAYSCALE);

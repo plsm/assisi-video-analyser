@@ -13,6 +13,7 @@
 #include "arena.hpp"
 #include "experiment.hpp"
 #include "video-analyser.hpp"
+#include "util.hpp"
 
 using namespace std;
 
@@ -20,6 +21,7 @@ void setup (const Parameters &parameters, Ui_MainWindow &mainWindow);
 
 int go (int argc, char **argv)
 {
+	init ();
 	QApplication a (argc, argv);
 	Parameters parameters = Parameters::parse (argc, argv);
 	if (parameters.number_frames == 0) {

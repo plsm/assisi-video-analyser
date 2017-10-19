@@ -5,6 +5,15 @@
 #include "image.hpp"
 #include "process-image.hpp"
 
+QVector<double> X_COLOURS (NUMBER_COLOUR_LEVELS);
+
+void init ()
+{
+	for (unsigned int i = 0; i < NUMBER_COLOUR_LEVELS; i++) {
+		X_COLOURS [i] = i;
+	}
+}
+
 void print_image (const cv::Mat &image, const char *name)
 {
 	fprintf (stderr, "Information about %s:\n", name);

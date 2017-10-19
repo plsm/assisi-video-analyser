@@ -25,12 +25,16 @@ public:
 public slots:
 	void update_data (int current_frame);
 	void histogram_equalisation (int new_state);
-	void update_displayed_frame (bool _);
+	void update_displayed_image ();
+	void crop_to_rect ();
+	void update_rect_data ();
 private:
 	QGraphicsItem *imageItem;
 	QGraphicsScene *scene;
-	void update_frame ();
-	void update_histogram ();
+	std::vector<QCPItemLine *> current_frame_line;
+	void update_image (int current_frame);
+	void update_histogram (int current_frame);
+	void update_plots (int current_frame);
 	void update_plot_bee_speed ();
 	void update_plot_number_bees ();
 	void update_plot_colours ();

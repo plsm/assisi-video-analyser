@@ -4,8 +4,6 @@
 
 const unsigned int NUMBER_COLOUR_LEVELS = 256;
 
-typedef QVector<double> Histogram;
-
 void compute_histogram (const cv::Mat &image, QVector<double> &histogram)
 {
 	// Quantize the saturation to 32 levels

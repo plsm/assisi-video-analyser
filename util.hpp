@@ -6,6 +6,10 @@
 
 #include "parameters.hpp"
 
+extern QVector<double> X_COLOURS;
+
+void init ();
+
 void print_histogram (const QVector<double> &histogram, const char *name);
 
 void print_image (const cv::Mat &image, const char *name);

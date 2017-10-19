@@ -167,7 +167,11 @@
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="currentFrameSpinBox"/>
+           <widget class="QSpinBox" name="currentFrameSpinBox">
+            <property name="value">
+             <number>1</number>
+            </property>
+           </widget>
           </item>
           <item>
            <spacer name="horizontalSpacer">
