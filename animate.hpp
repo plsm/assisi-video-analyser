@@ -1,11 +1,18 @@
 #include <map>
 #include <opencv2/opencv.hpp>
-#include <qobject.h>
-#include <qtimer.h>
-#include <qgraphicsscene.h>
-#include <qgraphicsitem.h>
 #include <vector>
 #include <string>
+
+#include <QtCore/qglobal.h>
+#include <QtCore/QObject>
+#include <QtCore/QTimer>
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QGraphicsItem>
+#include <QtGui/QGraphicsScene>
+#else
+#include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsScene>
+#endif
 
 #include "ui_video-analyser.h"
 #include "parameters.hpp"
@@ -16,6 +23,7 @@ class Animate:
 	Q_OBJECT;
 	static QVector<double> X_COLOURS;
 	const Parameters &parameters;
+	UserParameters &user_parameters;
 	unsigned int indexFrame;
 	bool isPlaying;
 	QTimer *timer;
@@ -31,7 +39,7 @@ class Animate:
 	std::vector<QCPItemLine *> currentFrameLine;
 public:
 	static void init ();
-	Animate (const Parameters &parameters, Ui_MainWindow *mainWindow);
+	Animate (const Parameters &parameters, UserParameters &, Ui_MainWindow *mainWindow);
 	virtual ~Animate () {}
 	void setup ();
 public slots:

@@ -24,9 +24,10 @@ void Animate::init ()
 	}
 }
 
-Animate::Animate (const Parameters &parameters, Ui_MainWindow *mainWindow):
+Animate::Animate (const Parameters &parameters, UserParameters &user_parameters, Ui_MainWindow *mainWindow):
 	QObject (),
 	parameters (parameters),
+	user_parameters (user_parameters),
 	indexFrame (1),
 	isPlaying (false),
 	mainWindow (mainWindow),
@@ -89,10 +90,16 @@ void Animate::updateFrame ()
 		string frame_path = this->getFramePath ();
 		image.load (frame_path.c_str ());
 	}
-	else if (this->mainWindow->showDiffPreviousRadioButton->isChecked ()) {
+	else if (this->mainWindow->showDiffPreviousRadioButton->isChecked () && this->indexFrame > this->parameters.delta_frame) {
+		cv::Mat diff = compute_difference_previous_image (this->parameters, this->user_parameters, this->indexFrame);
+		image = QPixmap::fromImage (Mat2QImage (diff));
+	}
+	else if (this->mainWindow->specialOperationRadioButton->isChecked () && this->indexFrame > this->parameters.delta_frame) {
+		cv::Mat _image = compute_threshold_mask_diff_background_diff_previous (this->parameters, this->indexFrame);
+		image = QPixmap::fromImage (Mat2QImage (_image));
 	}
 	else if (this->mainWindow->showDiffBackgroundRadioButton->isChecked ()) {
-		cv::Mat diff = compute_difference_background_image (this->parameters, this->indexFrame);
+		cv::Mat diff = compute_difference_background_image (this->parameters, this->user_parameters, this->indexFrame);
 		QImage _image = Mat2QImage (diff);
 		image = QPixmap::fromImage (_image);
 	}
@@ -149,7 +156,7 @@ void Animate::playStop ()
 
 void Animate::updateCurrentFrame (int value)
 {
-	cout << "void Animate::updateCurrentFrame (int value)\n";
+	cout << "void Animate::updateCurrentFrame (int value = " << value << ")\n";
 	this->indexFrame = value;
 	this->updateFrame ();
 	this->updateHistogram ();

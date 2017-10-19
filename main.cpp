@@ -1,6 +1,9 @@
-
-#include <qapplication.h>
-#include <qwidget.h>
+#include <QtCore/qglobal.h>
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QApplication>
+#else
+#include <QtWidgets/QApplication>
+#endif
 #include <opencv2/opencv.hpp>
 
 #include "animate.hpp"
@@ -8,13 +11,32 @@
 #include "process-image.hpp"
 #include "ui_video-analyser.h"
 #include "arena.hpp"
+#include "experiment.hpp"
+#include "video-analyser.hpp"
 
 using namespace std;
 
 void setup (const Parameters &parameters, Ui_MainWindow &mainWindow);
 
+int go (int argc, char **argv)
+{
+	QApplication a (argc, argv);
+	Parameters parameters = Parameters::parse (argc, argv);
+	if (parameters.number_frames == 0) {
+		fprintf (stderr, "There are no video frames in folder %s\n", parameters.folder.c_str ());
+		return 1;
+	}
+	UserParameters user_parameters;
+	Experiment experiment (parameters);
+	VideoAnalyser video_analyser (experiment);
+	video_analyser.show ();
+	return a.exec ();
+}
+
 int main( int argc, char **argv )
 {
+	return go (argc, argv);
+
 	QApplication a (argc, argv);
 	QMainWindow mainWindow;
 	Animate::init ();
@@ -26,9 +48,13 @@ int main( int argc, char **argv )
 		fprintf (stderr, "There are no video frames in folder %s\n", parameters.folder.c_str ());
 		return 1;
 	}
-	string folder ("/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_770-amp_40-pause_420/run-files_frequency=770Hz_amplitude=40_vibration-period=580ms_pause-period=420ms_R#2/");
-	string frame_file_type ("jpg");
-	Animate animate (parameters, &ui);
+	UserParameters user_parameters;
+	Experiment experiment (parameters);
+
+
+
+
+	Animate animate (parameters, user_parameters, &ui);
 	setup (parameters, ui);
 	StadiumArena3CASUs arena (parameters);
 	cout << arena << "\n";
@@ -38,9 +64,10 @@ int main( int argc, char **argv )
 	QObject::connect (ui.updateRectPushButton, SIGNAL (clicked ()), &animate, SLOT (updateRect ()));
 	QObject::connect (ui.framesPerSecondSpinBox, SIGNAL (valueChanged (double)), &animate, SLOT (updatePlaybackSpeed (double)));
 	QObject::connect (ui.currentFrameSpinBox, SIGNAL (valueChanged (int)), &animate, SLOT (updateCurrentFrame (int)));
-	compute_pixel_count_difference_raw (parameters);
 	return a.exec();
 }
+
+
 
 void setup (const Parameters &parameters, Ui_MainWindow &mainWindow)
 {

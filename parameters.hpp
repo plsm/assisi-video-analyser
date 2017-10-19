@@ -57,6 +57,10 @@ public:
 	{
 		return this->folder + "/features_pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-raw.csv";
 	}
+	std::string features_pixel_count_difference_histogram_equalization_filename () const
+	{
+		return this->folder + "/features-pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-histogram-equalization.csv";
+	}
 	std::string highest_colour_level_frames_rect_filename (int x1, int y1, int x2, int y2) const
 	{
 		return this->folder + "/highest-colour-level-frames-rect-" +
@@ -120,6 +124,37 @@ public:
 		}
 		fprintf (stderr, "\n");
 	}
+	template<typename A, typename B, typename C> void fold3_frames_V (void (*func) (A *, B *, C), A *acc1, B *acc2, C acc3) const
+	{
+		for (unsigned int index_frame = 1; index_frame <= this->number_frames; index_frame++) {
+			func (acc1, acc2, acc3);
+			fprintf (stderr, "\r    %d", index_frame);
+			fflush (stderr);
+		}
+		fprintf (stderr, "\n");
+	}
+	template<typename A, typename B, typename C> void fold3_frames_IF (void (*func) (unsigned int, const std::string &, A, B, C), A acc1, B acc2, C acc3) const
+	{
+		for (unsigned int index_frame = 1; index_frame <= this->number_frames; index_frame++) {
+			std::string frame_filename = this->frame_filename (index_frame);
+			func (index_frame, frame_filename, acc1, acc2, acc3);
+			fprintf (stderr, "\r    %d", index_frame);
+			fflush (stderr);
+		}
+		fprintf (stderr, "\n");
+	}
+};
+
+typedef enum {CURRENT_FRAME, DIFF_BACKGROUND_IMAGE, DIFF_PREVIOUS_IMAGE, SPECIAL_DATA} FrameData;
+
+/**
+ * Parameters that the user can set and that affect image processing functions.
+ */
+class UserParameters
+{
+public:
+	bool equalize_histograms;
+	FrameData data_2_view;
 };
 
 #endif

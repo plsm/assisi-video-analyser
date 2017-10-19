@@ -9,6 +9,11 @@
 
 extern const unsigned int NUMBER_COLOUR_LEVELS;
 
+inline cv::Mat read_image (const std::string &filename)
+{
+	return cv::imread (filename, CV_LOAD_IMAGE_GRAYSCALE);
+}
+
 /**
  * Read the background image located in the folder parameter.
  */

@@ -90,7 +90,7 @@ map<int, QVector<double> *> *compute_histogram_frames_rect (const Parameters &pa
 		for (unsigned int index_frame = 1; index_frame <= parameters.number_frames; index_frame++) {
 			string filename = parameters.frame_filename (index_frame);
 			(*result) [index_frame] = compute_histogram_file (filename, x1, y1, x2, y2);
-			write_histogram_file (file, index_frame, (*result) [index_frame]);
+			write_histogram_file (file, (*result) [index_frame]);
 			fprintf (stderr, "\r    %d", index_frame);
 			fflush (stderr);
 		}
@@ -111,12 +111,47 @@ void delete_histograms (map<int, QVector<double> *> *histograms)
 
 // functions that operate on images
 
-cv::Mat compute_difference_background_image (const Parameters &parameters, int index_frame)
+cv::Mat compute_difference_background_image (const Parameters &parameters, const UserParameters &user_parameters, int index_frame)
 {
 	cv::Mat background = cv::imread (parameters.background_filename (), CV_LOAD_IMAGE_GRAYSCALE);
 	cv::Mat frame = cv::imread (parameters.frame_filename (index_frame), CV_LOAD_IMAGE_GRAYSCALE);
-	cv::Mat result;
-	cv::absdiff (background, frame, result);
+	cv::Mat diff;
+	cv::absdiff (background, frame, diff);
+	if (user_parameters.equalize_histograms) {
+		cv::Mat result;
+		cv::equalizeHist (diff, result);
+		return result;
+	}
+	else
+		return diff;
+}
+
+cv::Mat compute_difference_previous_image (const Parameters &parameters, const UserParameters &user_parameters, int index_frame)
+{
+	cv::Mat current_frame = read_frame (parameters, index_frame);
+	cv::Mat previous_frame = read_frame (parameters, index_frame - parameters.delta_frame);
+	cv::Mat diff;
+	cv::absdiff (previous_frame, current_frame, diff);
+	if (user_parameters.equalize_histograms) {
+		cv::Mat result;
+		cv::equalizeHist (diff, result);
+		return result;
+	}
+	else
+		return diff;
+}
+
+cv::Mat compute_threshold_mask_diff_background_diff_previous (const Parameters &parameters, int index_frame)
+{
+	cv::Mat background = read_background (parameters);
+	cv::Mat current_frame = read_frame (parameters, index_frame);
+	cv::Mat previous_frame = read_frame (parameters, index_frame - parameters.delta_frame);
+	cv::Mat diff1, diff2, mask1, mask2, result;
+	cv::absdiff (background, current_frame, diff1);
+	cv::threshold (diff1, mask1, parameters.same_colour_level, 255, cv::THRESH_BINARY);
+	cv::absdiff (previous_frame, current_frame, diff2);
+	cv::threshold (diff2, mask2, parameters.same_colour_level, 255, cv::THRESH_BINARY);
+	result = mask1 | mask2;
 	return result;
 }
 
@@ -195,6 +230,83 @@ vector<QVector<double> > *compute_pixel_count_difference_raw (const Parameters &
 			fprintf (file, "\n");
 		}
 		fprintf (stderr, "\n");
+		fclose (file);
+	}
+	return result;
+}
+
+vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization (const Experiment &experiment)
+{
+	fprintf (stderr, "Computing pixel count difference on images that have gone through histogram equalization between background images and current frame and between current frame and %d frame afar\n", experiment.parameters.delta_frame);
+	vector<QVector<double> > *result = new vector<QVector<double> > (2 * experiment.parameters.number_ROIs);
+	string data_filename = experiment.parameters.features_pixel_count_difference_histogram_equalization_filename ();
+	if (access (data_filename.c_str (), F_OK) == 0) {
+		fprintf (stderr, "  reading data from file %s\n", data_filename.c_str ());
+		typedef void (*fold_func) (vector<QVector<double> > *, FILE *, unsigned int );
+		fold_func func = [] (vector<QVector<double> > *_result, FILE *_file, unsigned int number_ROIs) {
+			for (unsigned int index_mask = 0; index_mask < number_ROIs; index_mask++) {
+				int value;
+				if (index_mask > 0)
+					fscanf (_file, ",%d", &value);
+				else
+					fscanf (_file, "%d", &value);
+				(*_result) [index_mask * 2].append (value);
+				fscanf (_file, ",%d", &value);
+				(*_result) [index_mask * 2 + 1].append (value);
+			}
+		};
+		FILE *file = fopen (data_filename.c_str (), "r");
+		experiment.parameters.fold3_frames_V (func, result, file, experiment.parameters.number_ROIs);
+		fclose (file);
+	}
+	else {
+		fprintf (stderr, "  processing video frames in folder %s\n", experiment.parameters.folder.c_str ());
+		struct State {
+			const Experiment &_experiment;
+			cv::Mat background_HE;
+			std::vector<cv::Mat> frames;
+			State (const Experiment &e):
+				_experiment (e),
+				frames (e.parameters.delta_frame + 1)
+			{}
+		} state (experiment);
+		equalizeHist (experiment.background, state.background_HE);
+		typedef void (*fold_func) (unsigned int, const std::string &, vector<QVector<double> > *, FILE *, State *);
+		fold_func func = [] (unsigned int index_frame, const std::string &frame_filename, vector<QVector<double> > *_result, FILE *_file, State *_state) {
+			cv::Mat current_frame_raw = read_image (frame_filename);
+			equalizeHist (current_frame_raw, _state->frames [index_frame % (_state->_experiment.parameters.delta_frame + 1)]);
+			cv::Mat &current_frame_HE = _state->frames [index_frame % (_state->_experiment.parameters.delta_frame + 1)];
+			cv::Mat number_bees;
+			QVector<double> histogram;
+			cv::absdiff (_state->background_HE, current_frame_HE, number_bees);
+			int index_col = 0;
+			int value;
+			for (unsigned int index_mask = 0; index_mask < _state->_experiment.parameters.number_ROIs; index_mask++) {
+				cv::Mat diff = number_bees & _state->_experiment.masks [index_mask];
+				// if (first) {
+				// 	print_image (diff, "number of bees in first mask");
+				// 	first = false;
+				// }
+				compute_histogram_image (diff, histogram);
+				(*_result) [index_col++].append (value = number_different_pixels (_state->_experiment.parameters, histogram));
+				if (index_mask > 0) fprintf (_file, ",");
+				fprintf (_file, "%d", value);
+				if (index_frame > _state->_experiment.parameters.delta_frame) {
+					cv::absdiff (current_frame_HE, _state->frames [(index_frame + 1) % _state->_experiment.parameters.delta_frame], diff);
+					diff = diff & _state->_experiment.masks [index_mask];
+					compute_histogram_image (diff, histogram);
+					(*_result) [index_col++].append (value = number_different_pixels (_state->_experiment.parameters, histogram));
+					fprintf (_file, ",%d", value);
+				}
+				else {
+					(*_result) [index_col++].append (-1);
+					fprintf (_file, ",-1");
+				}
+			}
+			fprintf (_file, "\n");
+		};
+		FILE *file = fopen (data_filename.c_str (), "w");
+		experiment.parameters.fold3_frames_IF (func, result, file, &state);
 		fclose (file);
 	}
 	return result;

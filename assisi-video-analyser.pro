@@ -15,11 +15,15 @@ HEADERS += animate.hpp qcustomplot.h
 HEADERS += process-image.hpp
 HEADERS += parameters.hpp
 HEADERS += util.hpp
-HEADERS += image.hpp
+HEADERS += image.hpp \
+	experiment.hpp \
+	video-analyser.hpp
 FORMS += video-analyser.ui
 SOURCES += animate.cpp main.cpp qcustomplot.cpp
 SOURCES += process-image.cpp
 SOURCES += parameters.cpp
 SOURCES += util.cpp
 SOURCES += image.cpp
-SOURCES += arena.cpp
+SOURCES += arena.cpp \
+	experiment.cpp \
+	video-analyser.cpp 
