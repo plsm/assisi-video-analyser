@@ -7,57 +7,47 @@
 
 using namespace std;
 
-void compute_histogram_image (const cv::Mat &image, QVector<double> &histogram);
-QVector<double> *compute_histogram_image (const cv::Mat &image);
-QVector<double> *compute_histogram_file (const string &filename);
-QVector<double> *compute_histogram_file (const string &filename, int x1, int y1, int x2, int y2);
-QVector<double> *read_histogram_file (FILE *file);
-map<int, QVector<double> *> *read_histograms_file (const string &filename);
-void write_histogram_file (FILE *file, int indexFrame, const QVector<double> *histogram);
-void write_histogram_file (FILE *file, const QVector<double> *histogram);
-string get_frame_filename (int index_frame, const string &frameFileType);
+static map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const string &filename);
 
-QVector<double> *compute_histogram_background (const Parameters &parameters)
+Histogram *compute_histogram_background (const Parameters &parameters)
 {
 	fprintf (stderr, "Computing histogram of background image\n");
-	QVector<double> *result;
+	Histogram *result = new Histogram ();
 	string filename = parameters.histogram_background_filename ();
 	if (access (filename.c_str (), R_OK) == 0) {
 		fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
 		FILE *file = fopen (filename.c_str (), "r");
-		result = read_histogram_file (file);
+		result->read (file);
 		fclose (file);
 	}
 	else {
 		fprintf (stderr, "  processing background image in folder %s\n", parameters.folder.c_str ());
+		compute_histogram (read_background (parameters), *result);
 		FILE *file = fopen (filename.c_str (), "w");
-		result = compute_histogram_file (parameters.background_filename ());
-		write_histogram_file (file, result);
+		result->write (file);
 		fclose (file);
 	}
 	return result;
 }
 
-map<int, QVector<double> *> *compute_histogram_frames_all (const Parameters &parameters)
+map<int, Histogram> *compute_histogram_frames_all (const Parameters &parameters)
 {
 	fprintf (stderr, "Computing histogram of entire video frames\n");
-	map<int, QVector<double> *> *result = new map<int, QVector<double> *> ();
+	map<int, Histogram> *result;
 	string filename = parameters.histogram_frames_all_filename ();
 	if (access (filename.c_str (), F_OK) == 0) {
 		fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
-		FILE *file = fopen (filename.c_str (), "r");
-		for (unsigned int index_frame = 1; index_frame <= parameters.number_frames; index_frame++) {
-			(*result) [index_frame] = read_histogram_file (file);
-		}
-		fclose (file);
+		result = read_histograms_frames(parameters, filename);
 	}
 	else {
 		fprintf (stderr, "  processing video frames in folder %s\n", parameters.folder.c_str ());
 		FILE *file = fopen (filename.c_str (), "w");
+		result = new map<int, Histogram> ();
 		for (unsigned int index_frame = 1; index_frame <= parameters.number_frames; index_frame++) {
 			string filename = parameters.frame_filename (index_frame);
-			(*result) [index_frame] = compute_histogram_file (filename);
-			write_histogram_file (file, (*result) [index_frame]);
+			compute_histogram (read_frame (parameters, index_frame), (*result) [index_frame]);
+			(*result) [index_frame].write (file);
+			fprintf (file, "\n");
 			fprintf (stderr, "\r    %d", index_frame);
 			fflush (stderr);
 		}
@@ -75,22 +65,23 @@ map<int, QVector<double> *> *compute_histogram_frames_all (const Parameters &par
 // }
 
 
-map<int, QVector<double> *> *compute_histogram_frames_rect (const Parameters &parameters, int x1, int y1, int x2, int y2)
+map<int, Histogram> *compute_histogram_frames_rect (const Parameters &parameters, int x1, int y1, int x2, int y2)
 {
 	fprintf (stderr, "Computing histogram of rectangle (%d,%d)-(%d,%d) in all video frames\n", x1, y1, x2, y2);
-	map<int, QVector<double> *> *result = new map<int, QVector<double> *> ();
+	map<int, Histogram> *result;
 	string filename = parameters.histogram_frames_rect (x1, y1, x2, y2);
 	if (access (filename.c_str (), F_OK) == 0) {
 		fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
-		result = read_histograms_file (filename.c_str ());
+		result = read_histograms_frames (parameters, filename.c_str ());
 	}
 	else {
 		fprintf (stderr, "  processing video frames in folder %s\n", parameters.folder.c_str ());
 		FILE *file = fopen (filename.c_str (), "w");
+		result = new map<int, Histogram> ();
 		for (unsigned int index_frame = 1; index_frame <= parameters.number_frames; index_frame++) {
-			string filename = parameters.frame_filename (index_frame);
-			(*result) [index_frame] = compute_histogram_file (filename, x1, y1, x2, y2);
-			write_histogram_file (file, (*result) [index_frame]);
+			Image frame = read_frame (parameters, index_frame);
+			compute_histogram (frame, x1, y1, x2, y2, (*result) [index_frame]);
+			(*result) [index_frame].write (file);
 			fprintf (stderr, "\r    %d", index_frame);
 			fflush (stderr);
 		}
@@ -181,7 +172,7 @@ vector<QVector<double> > *compute_pixel_count_difference_raw (const Parameters &
 		fprintf (stderr, "  processing video frames in folder %s\n", parameters.folder.c_str ());
 		FILE *file = fopen (data_filename.c_str (), "w");
 		cv::Mat background = cv::imread (parameters.background_filename (), CV_LOAD_IMAGE_GRAYSCALE);
-		QVector<double> histogram (NUMBER_COLOUR_LEVELS);
+		Histogram histogram;
 
 		vector<cv::Mat> frames (parameters.delta_frame);
 		cv::Mat masks [parameters.number_ROIs];
@@ -209,14 +200,14 @@ vector<QVector<double> > *compute_pixel_count_difference_raw (const Parameters &
 				// 	print_image (diff, "number of bees in first mask");
 				// 	first = false;
 				// }
-				compute_histogram_image (diff, histogram);
+				compute_histogram (diff, histogram);
 				(*result) [index_col++].append (value = number_different_pixels (parameters, histogram));
 				if (index_mask > 0) fprintf (file, ",");
 				fprintf (file, "%d", value);
 				if (index_frame > parameters.delta_frame) {
 					cv::absdiff (current_frame, frames [(index_frame + 1) % parameters.delta_frame], diff);
 					diff = diff & masks [index_mask];
-					compute_histogram_image (diff, histogram);
+					compute_histogram (diff, histogram);
 					(*result) [index_col++].append (value = number_different_pixels (parameters, histogram));
 					fprintf (file, ",%d", value);
 				}
@@ -277,24 +268,20 @@ vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization 
 			equalizeHist (current_frame_raw, _state->frames [index_frame % (_state->_experiment.parameters.delta_frame + 1)]);
 			cv::Mat &current_frame_HE = _state->frames [index_frame % (_state->_experiment.parameters.delta_frame + 1)];
 			cv::Mat number_bees;
-			QVector<double> histogram;
+			Histogram histogram;
 			cv::absdiff (_state->background_HE, current_frame_HE, number_bees);
 			int index_col = 0;
 			int value;
 			for (unsigned int index_mask = 0; index_mask < _state->_experiment.parameters.number_ROIs; index_mask++) {
 				cv::Mat diff = number_bees & _state->_experiment.masks [index_mask];
-				// if (first) {
-				// 	print_image (diff, "number of bees in first mask");
-				// 	first = false;
-				// }
-				compute_histogram_image (diff, histogram);
+				compute_histogram (diff, histogram);
 				(*_result) [index_col++].append (value = number_different_pixels (_state->_experiment.parameters, histogram));
 				if (index_mask > 0) fprintf (_file, ",");
 				fprintf (_file, "%d", value);
 				if (index_frame > _state->_experiment.parameters.delta_frame) {
 					cv::absdiff (current_frame_HE, _state->frames [(index_frame + 1) % _state->_experiment.parameters.delta_frame], diff);
 					diff = diff & _state->_experiment.masks [index_mask];
-					compute_histogram_image (diff, histogram);
+					compute_histogram (diff, histogram);
 					(*_result) [index_col++].append (value = number_different_pixels (_state->_experiment.parameters, histogram));
 					fprintf (_file, ",%d", value);
 				}
@@ -332,22 +319,22 @@ QVector<double> *compute_highest_colour_level_frames_rect (const Parameters &par
 	else {
 		fprintf (stderr, "  computing from frames histograms\n");
 		FILE *file = fopen (filename.c_str (), "w");
-		map<int, QVector<double> *> *map_histograms = compute_histogram_frames_rect (parameters, x1, y1, x2, y2);
-		typedef void (*fold3_func) (unsigned int, map<int, QVector<double> *> *, QVector<double> *, FILE *);
-		fold3_func func3 = [] (unsigned int index_frame, map<int, QVector<double> *> *_map_histograms, QVector<double> *_result, FILE *_file) {
-			QVector<double> *an_histogram = _map_histograms->at (index_frame);
+		map<int, Histogram> *map_histograms = compute_histogram_frames_rect (parameters, x1, y1, x2, y2);
+		typedef void (*fold3_func) (unsigned int, map<int, Histogram> *, QVector<double> *, FILE *);
+		fold3_func func3 = [] (unsigned int index_frame, map<int, Histogram> *_map_histograms, QVector<double> *_result, FILE *_file) {
+			const Histogram &an_histogram = _map_histograms->at (index_frame);
 			int value = 0;
-			double best = (*an_histogram) [0];
+			double best = an_histogram [0];
 			for (unsigned int colour = 1; colour < NUMBER_COLOUR_LEVELS; colour++)
-				if ((*an_histogram) [colour] > best) {
-					best = (*an_histogram) [colour];
+				if (an_histogram [colour] > best) {
+					best = an_histogram [colour];
 					value = colour;
 				}
 			_result->append (value);
 			fprintf (_file, "%d\n", value);
 		};
 		parameters.fold3_frames_I (func3, map_histograms, result, file);
-		delete_histograms (map_histograms);
+		delete map_histograms;
 		fclose (file);
 	}
 	return result;
@@ -355,104 +342,13 @@ QVector<double> *compute_highest_colour_level_frames_rect (const Parameters &par
 
 // private functions
 
-QVector<double> *read_histogram_file (FILE *file)
+map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const string &filename)
 {
-	QVector<double> *result = new QVector<double> (NUMBER_COLOUR_LEVELS);
-	int value;
-	fscanf (file, "%d", &value);
-	(*result) [0] = value;
-	for (unsigned int i = 1; i < NUMBER_COLOUR_LEVELS; i++) {
-		fscanf (file, ",%d", &value);
-		(*result) [i] = value;
-	}
-	return result;
-}
-
-map<int, QVector<double> *> *read_histograms_file (const string &filename)
-{
-	map<int, QVector<double> *> *result = new map<int, QVector<double> *> ();
-	int indexFrame;
+	map<int, Histogram> *result = new map<int, Histogram> ();
 	FILE *file = fopen (filename.c_str (), "r");
-	bool good;
-	do {
-		good = fscanf (file, "%d,", &indexFrame) == 1;
-		if (good) {
-			(*result) [indexFrame] = read_histogram_file (file);
-		}
-	} while (good);
+	for (unsigned int index_frame = 1; index_frame <= parameters.number_frames; index_frame++) {
+		(*result) [index_frame].read (file);
+	};
 	fclose (file);
 	return result;
-}
-
-void write_histogram_file (FILE *file, int indexFrame, const QVector<double> *histogram)
-{
-	fprintf (file, "%d", indexFrame);
-	for (unsigned int i = 0; i < NUMBER_COLOUR_LEVELS; i++)
-		fprintf (file, ",%d", (int) (*histogram) [i]);
-	fprintf (file, "\n");
-}
-
-void write_histogram_file (FILE *file, const QVector<double> *histogram)
-{
-	fprintf (file, "%d", (int) (*histogram) [0]);
-	for (unsigned int i = 1; i < NUMBER_COLOUR_LEVELS; i++)
-		fprintf (file, ",%d", (int) (*histogram) [i]);
-	fprintf (file, "\n");
-}
-
-void compute_histogram_image (const cv::Mat &image, QVector<double> &histogram)
-{
-	// Quantize the saturation to 32 levels
-	int sbins = NUMBER_COLOUR_LEVELS;
-	int histSize[] = {sbins};
-	// saturation varies from 0 (black-gray-white) to
-	// 255 (pure spectrum color)
-	float sranges[] = { 0, NUMBER_COLOUR_LEVELS };
-	const float* ranges[] = { sranges };
-	cv::MatND hist;
-	// we compute the histogram from the 0-th
-	int channels[] = {0};
-	cv::calcHist (&image, 1, channels, cv::Mat (), // do not use mask
-             hist, 1, histSize, ranges,
-             true, // the histogram is uniform
-             false);
-	for (unsigned int i = 0; i < NUMBER_COLOUR_LEVELS; i++) {
-		histogram [i] = hist.at<float> (i);
-	}
-}
-
-
-QVector<double> *compute_histogram_image (const cv::Mat &image)
-{
-	QVector<double> *result = new QVector<double> (NUMBER_COLOUR_LEVELS);
-	// Quantize the saturation to 32 levels
-	int sbins = NUMBER_COLOUR_LEVELS;
-	int histSize[] = {sbins};
-	// saturation varies from 0 (black-gray-white) to
-	// 255 (pure spectrum color)
-	float sranges[] = { 0, NUMBER_COLOUR_LEVELS };
-	const float* ranges[] = { sranges };
-	cv::MatND hist;
-	// we compute the histogram from the 0-th
-	int channels[] = {0};
-	cv::calcHist (&image, 1, channels, cv::Mat (), // do not use mask
-             hist, 1, histSize, ranges,
-             true, // the histogram is uniform
-             false);
-	for (unsigned int i = 0; i < NUMBER_COLOUR_LEVELS; i++) {
-		(*result) [i] = hist.at<float> (i);
-	}
-	return result;
-}
-
-QVector<double> *compute_histogram_file (const string &filename)
-{
-	return compute_histogram_image (cv::imread (filename, CV_LOAD_IMAGE_GRAYSCALE));
-}
-
-QVector<double> *compute_histogram_file (const string &filename, int x1, int y1, int x2, int y2)
-{
-	cv::Mat image = cv::imread (filename, CV_LOAD_IMAGE_GRAYSCALE);
-	cv::Mat cropped (image, cv::Range (y1, y2), cv::Range (x1, x2));
-	return compute_histogram_image (cropped);
 }

@@ -174,15 +174,13 @@ void VideoAnalyser::update_rect_data ()
 	int x2 = this->ui.x2SpinBox->value ();
 	int y2 = this->ui.y2SpinBox->value ();
 	int current_frame = this->ui.currentFrameSpinBox->value ();
-	delete_histograms (this->experiment.histogram_frames_rect_raw);
+	delete this->experiment.histogram_frames_rect_raw;
 	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters, x1, y1, x2, y2);
-	Histogram *histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
-	this->ui.histogramView->graph (2)->setData (X_COLOURS, *histogram);
-	delete histogram;
+	this->ui.histogramView->graph (2)->setData (X_COLOURS, (*this->experiment.histogram_frames_rect_raw) [current_frame]);
 	cv::Mat cropped (this->experiment.background, cv::Range (y1, y2), cv::Range (x1, x2));
-	histogram = compute_histogram_image (cropped);
-	this->ui.histogramView->graph (3)->setData (X_COLOURS, *histogram);
-	delete histogram;
+	Histogram histogram;
+	compute_histogram (cropped, histogram);
+	this->ui.histogramView->graph (3)->setData (X_COLOURS, histogram);
 	this->ui.histogramView->replot ();
 	delete this->experiment.highest_colour_level_frames_rect;
 	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters, x1, y1, x2, y2);
@@ -228,11 +226,11 @@ void VideoAnalyser::update_image (int current_frame)
 
 void VideoAnalyser::update_histogram (int current_frame)
 {
-	QVector<double> *histogram = (*this->experiment.histogram_frames_all_raw) [current_frame];
-	this->ui.histogramView->graph (0)->setData (X_COLOURS, *histogram);
+	const Histogram &histogram = (*this->experiment.histogram_frames_all_raw) [current_frame];
+	this->ui.histogramView->graph (0)->setData (X_COLOURS, histogram);
 	if (this->experiment.histogram_frames_rect_raw != NULL) {
-		histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
-		this->ui.histogramView->graph (2)->setData (X_COLOURS, *histogram);
+		const Histogram &histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
+		this->ui.histogramView->graph (2)->setData (X_COLOURS, histogram);
 	}
 	this->ui.histogramView->replot ();
 }

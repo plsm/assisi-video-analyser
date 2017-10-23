@@ -7,6 +7,8 @@
 #include <map>
 
 #include "parameters.hpp"
+#include "process-image.hpp"
+#include "image.hpp"
 
 class Experiment {
 public:
@@ -16,15 +18,15 @@ public:
 	/**
 	 * Cache with the histogram of the background image.
 	 */
-	QVector<double> *histogram_background_raw;
+	Histogram *histogram_background_raw;
 	/**
 	 * Cache with the histogram of all frames.
 	 */
-	std::map<int, QVector<double> *> *histogram_frames_all_raw;
+	std::map<int, Histogram> *histogram_frames_all_raw;
 	/**
 	 * Caches the histogram of a rectangular area for all frames.
 	 */
-	std::map<int, QVector<double> *> *histogram_frames_rect_raw;
+	std::map<int, Histogram> *histogram_frames_rect_raw;
 	/**
 	 * Cache with the pixel count difference raw between background image and
 	 * current frame and between frames x s apart, for all regions of interest.

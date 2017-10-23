@@ -3,12 +3,15 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = 
+TARGET = assisi-video-analyser
 DEPENDPATH += .
 INCLUDEPATH += .
 
 CONFIG += link_pkgconfig
 PKGCONFIG = opencv yaml-cpp
+
+QT       += core gui
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 # Input
 HEADERS += animate.hpp qcustomplot.h
@@ -17,6 +20,7 @@ HEADERS += parameters.hpp
 HEADERS += util.hpp
 HEADERS += image.hpp \
 	experiment.hpp \
+        histogram.hpp \
 	video-analyser.hpp
 FORMS += video-analyser.ui
 SOURCES += animate.cpp main.cpp qcustomplot.cpp
@@ -26,4 +30,5 @@ SOURCES += util.cpp
 SOURCES += image.cpp
 SOURCES += arena.cpp \
 	experiment.cpp \
-	video-analyser.cpp 
+        histogram.cpp \
+	video-analyser.cpp

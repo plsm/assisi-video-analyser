@@ -4,7 +4,7 @@
 
 const unsigned int NUMBER_COLOUR_LEVELS = 256;
 
-void compute_histogram (const cv::Mat &image, QVector<double> &histogram)
+void compute_histogram (const cv::Mat &image, Histogram &histogram)
 {
 	// Quantize the saturation to 32 levels
 	int sbins = NUMBER_COLOUR_LEVELS;
@@ -28,7 +28,7 @@ void compute_histogram (const cv::Mat &image, QVector<double> &histogram)
 /**
  * Compute the histogram of the given image.
  */
-void compute_histogram (const cv::Mat &image, int x1, int y1, int x2, int y2, QVector<double> &histogram)
+void compute_histogram (const cv::Mat &image, int x1, int y1, int x2, int y2, Histogram &histogram)
 {
 	cv::Mat cropped (image, cv::Range (y1, y2), cv::Range (x1, x2));
 	compute_histogram (cropped, histogram);

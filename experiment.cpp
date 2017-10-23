@@ -21,7 +21,7 @@ Experiment::Experiment (const Parameters &parameters):
 		masks [index_mask] = read_image (parameters.mask_filename (index_mask));
 	}
 	for (unsigned int i = 1; i <= parameters.number_frames; i++) {
-		X_FRAMES [i] = i;
+		X_FRAMES [i - 1] = i;
 	}
 }
 
@@ -31,4 +31,5 @@ Experiment::~Experiment ()
 	delete histogram_frames_all_raw;
 	delete histogram_frames_rect_raw;
 	delete pixel_count_difference_raw;
+	delete highest_colour_level_frames_rect;
 }

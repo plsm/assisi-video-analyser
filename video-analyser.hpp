@@ -1,11 +1,14 @@
 #ifndef __VIDEO_ANALYSER__
 #define __VIDEO_ANALYSER__
 
-#include <QtGui/QMainWindow>
+#include <QtCore/qglobal.h>
+
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QMainWindow>
 #include <QtGui/QGraphicsItem>
 #include <QtGui/QGraphicsScene>
 #else
+#include <QtWidgets/QMainWindow>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsScene>
 #endif
@@ -17,7 +20,7 @@
 class VideoAnalyser:
 	public QMainWindow
 {
-	Q_OBJECT;
+	Q_OBJECT
 	Ui_MainWindow ui;
 	Experiment &experiment;
 	UserParameters user_parameters;
