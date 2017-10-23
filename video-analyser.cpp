@@ -46,11 +46,11 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		QPen pen;
 	};
 	Graph_Info graph_info[] = {
-		{.legend = "current frame no cropping"       , .pen = QPen (Qt::green   , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "background no cropping"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "current frame cropped rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "background cropped rectangle"    , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "current frame light calibrated"  , .pen = QPen (Qt::yellow  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
+		{.legend = "current frame - no cropping"       , .pen = QPen (Qt::green   , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "background - no cropping"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "current frame - cropped rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "background - cropped rectangle"    , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "current frame light calibrated"    , .pen = QPen (Qt::yellow  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
 	for (int i = 0; i < 5; i++) {
 		QCPGraph *graph = ui.histogramView->addGraph ();
@@ -61,9 +61,21 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		axis->setLabel ("frame");
 		axis->setRange (0, experiment.parameters.number_frames);
 	};
+	auto set_colour_axis = [&] (auto axis) {
+		QSharedPointer<QCPAxisTickerText> textTicker (new QCPAxisTickerText);
+		axis->setRange (0, NUMBER_COLOUR_LEVELS);
+		textTicker->addTick (0, "0\nblack");
+		textTicker->addTick (63, "63");
+		textTicker->addTick (127, "127");
+		textTicker->addTick (191, "191");
+		textTicker->addTick (255, "255\nwhite");
+		axis->setTicker (textTicker);
+	};
 	ui.histogramView->legend->setVisible (true);
-	ui.histogramView->xAxis->setRange (0, NUMBER_COLOUR_LEVELS);
+	set_colour_axis (ui.histogramView->xAxis);
+	ui.histogramView->xAxis->setLabel ("intensity level");
 	ui.histogramView->yAxis->setRange (0, 50000);
+	ui.histogramView->yAxis->setLabel ("count");
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 		QCPGraph *graph = this->ui.plotNumberBeesView->addGraph ();
 		graph->setName (QString (("number bees in ROI " + to_string (i + 1)).c_str ()));
@@ -81,13 +93,15 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 											  192)));
 	}
 	this->ui.plotBeeSpeedView->legend->setVisible (true);
-	this->ui.plotBeeSpeedView->xAxis->setRange (0, experiment.parameters.number_frames);
+	set_xaxis (this->ui.plotBeeSpeedView->xAxis);
 	this->ui.plotBeeSpeedView->yAxis->setRange (0, 2000);
+	this->ui.plotBeeSpeedView->yAxis->setLabel ("number pixels");
 	this->ui.plotNumberBeesView->legend->setVisible (true);
-	this->ui.plotNumberBeesView->xAxis->setRange (0, experiment.parameters.number_frames);
+	set_xaxis (this->ui.plotNumberBeesView->xAxis);
 	this->ui.plotNumberBeesView->yAxis->setRange (0, 3500);
+	this->ui.plotNumberBeesView->yAxis->setLabel ("number pixels");
 	Graph_Info plot_graph_info[] = {
-		{.legend = "most common colour"   , .pen = QPen (Qt::red  , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
+		{.legend = "most common intensity - cropped rectangle"   , .pen = QPen (Qt::red  , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
 	for (int i = 0; i < 1; i++) {
 		QCPGraph *graph = this->ui.plotColourView->addGraph ();
@@ -98,8 +112,8 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	this->ui.plotColourView->xAxis->setRange (0, experiment.parameters.number_frames);
 	this->ui.plotColourView->xAxis->setLabel ("frame");
 	set_xaxis (this->ui.plotColourView->xAxis);
-	this->ui.plotColourView->yAxis->setRange (0, 256);
-	this->ui.plotColourView->yAxis->setLabel ("absolute colour level");
+	this->ui.plotColourView->yAxis->setLabel ("absolute intensity level");
+	set_colour_axis (this->ui.plotColourView->yAxis);
 	// show constant data
 	ui.histogramView->graph (1)->setData (X_COLOURS, *experiment.histogram_background_raw);
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
