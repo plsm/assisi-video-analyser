@@ -50,7 +50,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		{.legend = "background - no cropping"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
 		{.legend = "current frame - cropped rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
 		{.legend = "background - cropped rectangle"    , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "current frame light calibrated"    , .pen = QPen (Qt::yellow  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
+		{.legend = "current frame light calibrated"    , .pen = QPen (QColor (127, 127, 0)  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
 	for (int i = 0; i < 5; i++) {
 		QCPGraph *graph = ui.histogramView->addGraph ();
@@ -175,13 +175,14 @@ void VideoAnalyser::update_displayed_image ()
 		this->user_parameters.image_data = SPECIAL_DATA;
 	}
 	else if (this->ui.lightCalibratedRadioButton->isChecked ()
-	         && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame
 	         && this->experiment.highest_colour_level_frames_rect != NULL){
 		change = this->user_parameters.image_data != LIGHT_CALIBRATED;
 		this->user_parameters.image_data = LIGHT_CALIBRATED;
 	}
-	if (change)
+	if (change) {
 		this->update_image (this->ui.currentFrameSpinBox->value ());
+		this->update_histogram (this->ui.currentFrameSpinBox->value ());
+	}
 }
 
 void VideoAnalyser::crop_to_rect ()
