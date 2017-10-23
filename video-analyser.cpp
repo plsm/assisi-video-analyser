@@ -46,12 +46,13 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		QPen pen;
 	};
 	Graph_Info graph_info[] = {
-		{.legend = "current frame all"       , .pen = QPen (Qt::green   , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "background all"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "current frame rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "background rectangle"    , .pen = QPen (Qt::red    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "current frame no cropping"       , .pen = QPen (Qt::green   , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "background no cropping"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "current frame cropped rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "background cropped rectangle"    , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+		{.legend = "current frame light calibrated"  , .pen = QPen (Qt::yellow  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 5; i++) {
 		QCPGraph *graph = ui.histogramView->addGraph ();
 		graph->setName (graph_info [i].legend);
 		graph->setPen (graph_info [i].pen);
@@ -110,6 +111,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.showDiffPreviousRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.showDiffBackgroundRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.showVideoFrameRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
+	QObject::connect (ui.lightCalibratedRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.cropToRectCheckBox, SIGNAL (clicked ()), this, SLOT (crop_to_rect ()));
 	QObject::connect (ui.histogramEqualisationCheckBox, SIGNAL (stateChanged (int)), this, SLOT (histogram_equalisation (int)));
 	QObject::connect (ui.currentFrameSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_data (int)));
@@ -157,6 +159,12 @@ void VideoAnalyser::update_displayed_image ()
 	else if (this->ui.specialOperationRadioButton->isChecked () && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame) {
 		change = this->user_parameters.image_data != SPECIAL_DATA;
 		this->user_parameters.image_data = SPECIAL_DATA;
+	}
+	else if (this->ui.lightCalibratedRadioButton->isChecked ()
+	         && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame
+	         && this->experiment.highest_colour_level_frames_rect != NULL){
+		change = this->user_parameters.image_data != LIGHT_CALIBRATED;
+		this->user_parameters.image_data = LIGHT_CALIBRATED;
 	}
 	if (change)
 		this->update_image (this->ui.currentFrameSpinBox->value ());
@@ -210,6 +218,11 @@ void VideoAnalyser::update_image (int current_frame)
 		image = QPixmap::fromImage (Mat2QImage (_image));
 		break;
 	}
+	case LIGHT_CALIBRATED: {
+		cv::Mat _image = light_calibration (this->experiment, current_frame);
+		image = QPixmap::fromImage (Mat2QImage (_image));
+		break;
+	}
 	}
 	if (this->imageItem != NULL) {
 		this->scene->removeItem (this->imageItem);
@@ -231,6 +244,13 @@ void VideoAnalyser::update_histogram (int current_frame)
 	if (this->experiment.histogram_frames_rect_raw != NULL) {
 		const Histogram &histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
 		this->ui.histogramView->graph (2)->setData (X_COLOURS, histogram);
+	}
+	this->ui.histogramView->graph (4)->setVisible (this->user_parameters.image_data == LIGHT_CALIBRATED);
+	if (this->user_parameters.image_data == LIGHT_CALIBRATED) {
+		Histogram histogram;
+		cv::Mat _image = light_calibration (this->experiment, current_frame);
+		compute_histogram (_image, histogram);
+		this->ui.histogramView->graph (4)->setData (X_COLOURS, histogram);
 	}
 	this->ui.histogramView->replot ();
 }

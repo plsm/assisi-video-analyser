@@ -23,3 +23,15 @@ void Histogram::write (FILE *file)
 	for (unsigned int i = 1; i < NUMBER_COLOUR_LEVELS; i++)
 		fprintf (file, ",%d", (int) (*this) [i]);
 }
+
+int Histogram::most_common_colour () const
+{
+	int result = 0;
+	double best = (*this) [0];
+	for (unsigned int colour = 1; colour < NUMBER_COLOUR_LEVELS; colour++)
+		if ((*this) [colour] > best) {
+			best = (*this) [colour];
+			result = colour;
+		}
+	return result;
+}

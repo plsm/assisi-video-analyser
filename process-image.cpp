@@ -25,6 +25,7 @@ Histogram *compute_histogram_background (const Parameters &parameters)
 		compute_histogram (read_background (parameters), *result);
 		FILE *file = fopen (filename.c_str (), "w");
 		result->write (file);
+		fprintf (file, "\n");
 		fclose (file);
 	}
 	return result;
@@ -82,6 +83,7 @@ map<int, Histogram> *compute_histogram_frames_rect (const Parameters &parameters
 			Image frame = read_frame (parameters, index_frame);
 			compute_histogram (frame, x1, y1, x2, y2, (*result) [index_frame]);
 			(*result) [index_frame].write (file);
+			fprintf (file, "\n");
 			fprintf (stderr, "\r    %d", index_frame);
 			fflush (stderr);
 		}
@@ -144,6 +146,23 @@ cv::Mat compute_threshold_mask_diff_background_diff_previous (const Parameters &
 	cv::threshold (diff2, mask2, parameters.same_colour_level, 255, cv::THRESH_BINARY);
 	result = mask1 | mask2;
 	return result;
+}
+
+cv::Mat light_calibration (const Experiment &experiment, unsigned int index_frame)
+{
+	cv::Mat background = read_background (experiment.parameters);
+	cv::Mat frame = read_frame (experiment.parameters, index_frame);
+	unsigned char pb = experiment.histogram_background_raw->most_common_colour ();
+	unsigned char pf = (*experiment.highest_colour_level_frames_rect) [index_frame - 1];
+	for(int i = 0; i < frame.rows; i++)
+		for(int j = 0; j < frame.cols; j++) {
+			unsigned char old_value = frame.at<unsigned char> (i, j);
+			if (old_value < pf)
+				frame.at<unsigned char> (i, j) = (old_value * pb) / pf;
+			else
+				frame.at<unsigned char> (i, j) = 255 - ((255 - old_value) * (255 - pb) / (255 - pf));
+		}
+	return frame;
 }
 
 vector<QVector<double> > *compute_pixel_count_difference_raw (const Parameters &parameters)

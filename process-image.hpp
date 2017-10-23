@@ -30,10 +30,6 @@ std::map<int, Histogram> *compute_histogram_frames_ROI (const Parameters &parame
 
 std::map<int, Histogram> *compute_histogram_frames_rect (const Parameters &parameters, int x1, int y1, int x2, int y2);
 
-//QVector<double> *compute_histogram_image (const cv::Mat &image);
-
-//void delete_histograms (std::map<int, QVector<double> *> *histograms);
-
 /**
  * Compute an image that corresponds to the absolute difference between the
  * background image and a video frame.  This image can be used to get a
@@ -49,6 +45,8 @@ cv::Mat compute_difference_previous_image (const Parameters &parameters, const U
  * difference between the given video frame and a frame afar.
  */
 cv::Mat compute_threshold_mask_diff_background_diff_previous (const Parameters &parameters, int index_frame);
+
+cv::Mat light_calibration (const Experiment &experiment, unsigned int index_frame);
 
 std::vector<QVector<double> > *compute_pixel_count_difference_raw (const Parameters &parameters);
 
