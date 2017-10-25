@@ -2,6 +2,7 @@
 #include <string>
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "video-analyser.hpp"
 
@@ -11,7 +12,7 @@
 
 using namespace std;
 
-static QImage Mat2QImage (const cv::Mat &src);
+static QImage Mat2QImage (const cv::Mat &image, const cv::Mat &mask);
 
 VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	experiment (experiment),
@@ -30,6 +31,19 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		this->current_frame_line [i]->start->setCoords (1, 0);
 		this->current_frame_line [i]->end->setCoords (1, 1);
 	}
+	// initialise the line representing the intensity to analyse
+	this->intensity_analyse_line = new QCPItemLine (this->ui.histogramView);
+	this->intensity_analyse_line->start->setTypeY (QCPItemPosition::ptAxisRectRatio);
+	this->intensity_analyse_line->start->setCoords (1, 0);
+	this->intensity_analyse_line->end->setCoords (1, 1);
+	this->intensity_analyse_line->setPen (QPen (QColor (0, 0, 0, 127), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+	this->intensity_span_rect = new QCPItemRect (this->ui.histogramView);
+	this->intensity_span_rect->topLeft->setTypeY (QCPItemPosition::ptAxisRectRatio);
+	this->intensity_span_rect->topLeft->setCoords (1, 0);
+	this->intensity_span_rect->bottomRight->setTypeY (QCPItemPosition::ptAxisRectRatio);
+	this->intensity_span_rect->bottomRight->setCoords (10, 1);
+	this->intensity_span_rect->setPen (QPen (QColor (127, 127, 127, 63), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+	this->intensity_span_rect->setBrush (QBrush (QColor (127, 127, 127, 63)));
 	// setup widgets
 	QSpinBox *horizontal_spinBoxes[] = {ui.x1SpinBox, ui.x2SpinBox};
 	QSpinBox *vertical_spinBoxes[] = {ui.y1SpinBox, ui.y2SpinBox};
@@ -132,6 +146,9 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.updateRectPushButton, SIGNAL (clicked ()), this, SLOT (update_rect_data ()));
 	QObject::connect (ui.playStopButton, SIGNAL (clicked ()), &this->animate, SLOT (play_stop ()));
 	QObject::connect (ui.framesPerSecondSpinBox, SIGNAL (valueChanged (double)), &this->animate, SLOT (update_playback_speed (double)));
+	QObject::connect (ui.filterToIntensityCheckBox, SIGNAL (clicked ()), this, SLOT (filter_to_intensity ()));
+	QObject::connect (ui.intensityAnalyseSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
+	QObject::connect (ui.sameColourThresholdSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	//
 	this->user_parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	this->update_data (this->ui.currentFrameSpinBox->value ());
@@ -140,14 +157,14 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 void VideoAnalyser::update_data (int current_frame)
 {
 	this->update_image (current_frame);
-	this->update_histogram (current_frame);
+	this->update_histogram_data (current_frame);
 	this->update_plots (current_frame);
 	this->update_plot_bee_speed ();
 	this->update_plot_number_bees ();
 	this->update_plot_colours ();
 }
 
-void VideoAnalyser::histogram_equalisation (int new_state)
+void VideoAnalyser::histogram_equalisation (int)
 {
 	this->user_parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	if (this->ui.showDiffPreviousRadioButton->isChecked () ||
@@ -181,7 +198,7 @@ void VideoAnalyser::update_displayed_image ()
 	}
 	if (change) {
 		this->update_image (this->ui.currentFrameSpinBox->value ());
-		this->update_histogram (this->ui.currentFrameSpinBox->value ());
+		this->update_histogram_data (this->ui.currentFrameSpinBox->value ());
 	}
 }
 
@@ -200,7 +217,7 @@ void VideoAnalyser::update_rect_data ()
 	delete this->experiment.histogram_frames_rect_raw;
 	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters, x1, y1, x2, y2);
 	this->ui.histogramView->graph (2)->setData (X_COLOURS, (*this->experiment.histogram_frames_rect_raw) [current_frame]);
-	cv::Mat cropped (this->experiment.background, cv::Range (y1, y2), cv::Range (x1, x2));
+	cv::Mat cropped (this->experiment.background, cv::Range (x1, x2), cv::Range (y1, y2));
 	Histogram histogram;
 	compute_histogram (cropped, histogram);
 	this->ui.histogramView->graph (3)->setData (X_COLOURS, histogram);
@@ -211,48 +228,79 @@ void VideoAnalyser::update_rect_data ()
 	this->ui.plotColourView->replot ();
 }
 
+void VideoAnalyser::filter_to_intensity ()
+{
+	this->update_image (this->ui.currentFrameSpinBox->value ());
+	this->update_histogram_data (this->ui.currentFrameSpinBox->value ());
+}
+
+void VideoAnalyser::update_filtered_intensity (int)
+{
+	this->update_histogram_item (this->ui.intensityAnalyseSpinBox->value (), this->ui.sameColourThresholdSpinBox->value () * NUMBER_COLOUR_LEVELS / 100);
+	if (this->ui.filterToIntensityCheckBox->isChecked ()) {
+		this->update_image (this->ui.currentFrameSpinBox->value ());
+	}
+}
+
 void VideoAnalyser::update_image (int current_frame)
 {
-	QPixmap image;
+	cv::Mat image, mask;
 	switch (this->user_parameters.image_data) {
 	case CURRENT_FRAME:
-		image.load (this->experiment.parameters.frame_filename (current_frame).c_str ());
+		image = read_frame (this->experiment.parameters, current_frame);
 		break;
 	case DIFF_BACKGROUND_IMAGE: {
-		cv::Mat diff = compute_difference_background_image (this->experiment.parameters, this->user_parameters, current_frame);
-		image = QPixmap::fromImage (Mat2QImage (diff));
+		image = compute_difference_background_image (this->experiment.parameters, this->user_parameters, current_frame);
 		break;
 	}
 	case DIFF_PREVIOUS_IMAGE: {
-		cv::Mat diff = compute_difference_previous_image (this->experiment.parameters, this->user_parameters, current_frame);
-		image = QPixmap::fromImage (Mat2QImage (diff));
+		image = compute_difference_previous_image (this->experiment.parameters, this->user_parameters, current_frame);
 		break;
 	}
 	case SPECIAL_DATA: {
-		cv::Mat _image = compute_threshold_mask_diff_background_diff_previous (this->experiment.parameters, current_frame);
-		image = QPixmap::fromImage (Mat2QImage (_image));
+		image = compute_threshold_mask_diff_background_diff_previous (this->experiment.parameters, current_frame);
 		break;
 	}
 	case LIGHT_CALIBRATED: {
-		cv::Mat _image = light_calibration (this->experiment, current_frame);
-		image = QPixmap::fromImage (Mat2QImage (_image));
+		image = light_calibration (this->experiment, current_frame);
 		break;
 	}
+	}
+	if (this->ui.cropToRectCheckBox->isChecked ())
+		image = cv::Mat (image, cv::Range (this->ui.x1SpinBox->value (), this->ui.x2SpinBox->value ()), cv::Range (this->ui.y1SpinBox->value (), this->ui.y2SpinBox->value ()));
+	if (this->ui.filterToIntensityCheckBox->isChecked ()) {
+		cv::Mat mask1, mask2, tmp_image;
+		double intensity_analyse = this->ui.intensityAnalyseSpinBox->value ();
+		double same_intensity_level = this->ui.sameColourThresholdSpinBox->value () * NUMBER_COLOUR_LEVELS / 100;
+		if (intensity_analyse > same_intensity_level) {
+			cv::threshold (image, mask1, intensity_analyse - same_intensity_level - 1, NUMBER_COLOUR_LEVELS, cv::THRESH_BINARY);
+			cv::threshold (image, tmp_image, intensity_analyse - same_intensity_level - 1, 0, cv::THRESH_TOZERO);
+		}
+		else  {
+			mask1 = cv::Mat::ones (image.size ().height, image.size ().width, CV_8UC1);
+			tmp_image = image;
+		}
+		if (intensity_analyse + same_intensity_level < NUMBER_COLOUR_LEVELS ) {
+			cv::threshold (image, mask2, intensity_analyse + same_intensity_level + 1, NUMBER_COLOUR_LEVELS, cv::THRESH_BINARY_INV);
+			cv::threshold (tmp_image, image, intensity_analyse + same_intensity_level + 1, 0, cv::THRESH_TOZERO_INV);
+		}
+		else {
+			mask2 = cv::Mat::ones (image.size ().height, image.size ().width, CV_8UC1);
+			image = tmp_image;
+		}
+		mask = mask1 & mask2;
+	}
+	else {
+		mask = cv::Mat::ones (image.size ().height, image.size ().width, CV_8UC1);
 	}
 	if (this->imageItem != NULL) {
 		this->scene->removeItem (this->imageItem);
 	}
-	if (this->ui.cropToRectCheckBox->isChecked ())
-		image = image.copy (
-		 this->ui.x1SpinBox->value (),
-		 this->ui.y1SpinBox->value (),
-		 this->ui.x2SpinBox->value () - this->ui.x1SpinBox->value (),
-		 this->ui.y2SpinBox->value () - this->ui.y1SpinBox->value ());
-	this->imageItem = this->scene->addPixmap (image);
+	this->imageItem = this->scene->addPixmap (QPixmap::fromImage (Mat2QImage (image, mask)));
 	this->ui.frameView->update ();
 }
 
-void VideoAnalyser::update_histogram (int current_frame)
+void VideoAnalyser::update_histogram_data (int current_frame)
 {
 	const Histogram &histogram = (*this->experiment.histogram_frames_all_raw) [current_frame];
 	this->ui.histogramView->graph (0)->setData (X_COLOURS, histogram);
@@ -267,6 +315,15 @@ void VideoAnalyser::update_histogram (int current_frame)
 		compute_histogram (_image, histogram);
 		this->ui.histogramView->graph (4)->setData (X_COLOURS, histogram);
 	}
+	this->ui.histogramView->replot ();
+}
+
+void VideoAnalyser::update_histogram_item (int intensity_analyse, int same_intensity_level)
+{
+	this->intensity_analyse_line->start->setCoords (intensity_analyse, 0);
+	this->intensity_analyse_line->end->setCoords (intensity_analyse, 1);
+	this->intensity_span_rect->topLeft->setCoords (max (intensity_analyse - same_intensity_level, 0), 1);
+	this->intensity_span_rect->bottomRight->setCoords (min (intensity_analyse + same_intensity_level, (int) NUMBER_COLOUR_LEVELS), 0);
 	this->ui.histogramView->replot ();
 }
 
@@ -293,13 +350,19 @@ void VideoAnalyser::update_plot_colours ()
 {
 }
 
-QImage Mat2QImage (const cv::Mat &src)
+QImage Mat2QImage (const cv::Mat &image, const cv::Mat &mask)
 {
-	QImage dest (src.rows, src.cols, QImage::Format_ARGB32);
-	for (int y = 0; y < src.rows; ++y) {
-		for (int x = 0; x < src.cols; ++x) {
-			unsigned int color = src.at<unsigned char> (x, y);
-			dest.setPixel (y, x, qRgba (color, color, color, 255));
+	QImage dest (image.rows, image.cols, QImage::Format_ARGB32);
+	for (int y = 0; y < image.rows; ++y) {
+		for (int x = 0; x < image.cols; ++x) {
+			unsigned char visible = mask.at<unsigned char> (x, y);
+			if (visible != 0) {
+				unsigned int color = image.at<unsigned char> (x, y);
+				dest.setPixel (y, x, qRgba (color, color, color, 255));
+			}
+			else {
+					dest.setPixel (y, x, qRgba (0, 192, 0, 255));
+			}
 		}
 	}
 	return dest;
