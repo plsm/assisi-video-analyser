@@ -29,7 +29,9 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		this->current_frame_line [i] = new QCPItemLine (owners [i]);
 		this->current_frame_line [i]->start->setTypeY (QCPItemPosition::ptAxisRectRatio);
 		this->current_frame_line [i]->start->setCoords (1, 0);
+		this->current_frame_line [i]->end->setTypeY (QCPItemPosition::ptAxisRectRatio);
 		this->current_frame_line [i]->end->setCoords (1, 1);
+		this->current_frame_line [i]->setPen (QPen (QColor (0, 0, 0, 127), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 	}
 	// initialise the line representing the intensity to analyse
 	this->intensity_analyse_line = new QCPItemLine (this->ui.histogramView);
@@ -39,9 +41,9 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	this->intensity_analyse_line->setPen (QPen (QColor (0, 0, 0, 127), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 	this->intensity_span_rect = new QCPItemRect (this->ui.histogramView);
 	this->intensity_span_rect->topLeft->setTypeY (QCPItemPosition::ptAxisRectRatio);
-	this->intensity_span_rect->topLeft->setCoords (1, 0);
+	this->intensity_span_rect->topLeft->setCoords (0, 1);
 	this->intensity_span_rect->bottomRight->setTypeY (QCPItemPosition::ptAxisRectRatio);
-	this->intensity_span_rect->bottomRight->setCoords (10, 1);
+	this->intensity_span_rect->bottomRight->setCoords (0, 0);
 	this->intensity_span_rect->setPen (QPen (QColor (127, 127, 127, 63), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 	this->intensity_span_rect->setBrush (QBrush (QColor (127, 127, 127, 63)));
 	// setup widgets
@@ -128,6 +130,12 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	set_xaxis (this->ui.plotColourView->xAxis);
 	this->ui.plotColourView->yAxis->setLabel ("absolute intensity level");
 	set_colour_axis (this->ui.plotColourView->yAxis);
+	//   allow moving the plot ranges
+	QCustomPlot *range_plots[] = {this->ui.plotColourView, this->ui.plotBeeSpeedView, this->ui.plotNumberBeesView, this->ui.histogramView};
+	for (QCustomPlot *a_plot : range_plots) {
+		a_plot->setInteraction (QCP::iRangeDrag, true);
+		a_plot->setInteraction (QCP::iRangeZoom, true);
+	}
 	// show constant data
 	ui.histogramView->graph (1)->setData (X_COLOURS, *experiment.histogram_background_raw);
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
