@@ -225,7 +225,7 @@ void VideoAnalyser::update_rect_data ()
 	delete this->experiment.histogram_frames_rect_raw;
 	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters, x1, y1, x2, y2);
 	this->ui.histogramView->graph (2)->setData (X_COLOURS, (*this->experiment.histogram_frames_rect_raw) [current_frame]);
-	cv::Mat cropped (this->experiment.background, cv::Range (x1, x2), cv::Range (y1, y2));
+	cv::Mat cropped (this->experiment.background, cv::Range (y1, y2), cv::Range (x1, x2));
 	Histogram histogram;
 	compute_histogram (cropped, histogram);
 	this->ui.histogramView->graph (3)->setData (X_COLOURS, histogram);
@@ -275,7 +275,7 @@ void VideoAnalyser::update_image (int current_frame)
 	}
 	}
 	if (this->ui.cropToRectCheckBox->isChecked ())
-		image = cv::Mat (image, cv::Range (this->ui.x1SpinBox->value (), this->ui.x2SpinBox->value ()), cv::Range (this->ui.y1SpinBox->value (), this->ui.y2SpinBox->value ()));
+		image = cv::Mat (image, cv::Range (this->ui.y1SpinBox->value (), this->ui.y2SpinBox->value ()), cv::Range (this->ui.x1SpinBox->value (), this->ui.x2SpinBox->value ()));
 	if (this->ui.filterToIntensityCheckBox->isChecked ()) {
 		cv::Mat mask1, mask2, tmp_image;
 		double intensity_analyse = this->ui.intensityAnalyseSpinBox->value ();
@@ -360,16 +360,16 @@ void VideoAnalyser::update_plot_colours ()
 
 QImage Mat2QImage (const cv::Mat &image, const cv::Mat &mask)
 {
-	QImage dest (image.rows, image.cols, QImage::Format_ARGB32);
+	QImage dest (image.cols, image.rows, QImage::Format_ARGB32);
 	for (int y = 0; y < image.rows; ++y) {
 		for (int x = 0; x < image.cols; ++x) {
-			unsigned char visible = mask.at<unsigned char> (x, y);
+			unsigned char visible = mask.at<unsigned char> (y, x);
 			if (visible != 0) {
-				unsigned int color = image.at<unsigned char> (x, y);
-				dest.setPixel (y, x, qRgba (color, color, color, 255));
+				unsigned int color = image.at<unsigned char> (y, x);
+				dest.setPixel (x, y, qRgba (color, color, color, 255));
 			}
 			else {
-					dest.setPixel (y, x, qRgba (0, 192, 0, 255));
+				dest.setPixel (x, y, qRgba (0, 192, 0, 255));
 			}
 		}
 	}
