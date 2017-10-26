@@ -337,6 +337,7 @@ vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_c
 			unsigned char pf = (*_experiment->highest_colour_level_frames_rect) [index_frame - 1];
 			light_calibrate (frame, pb, pf);
 			compute_pixel_count_difference (*_experiment, _experiment->background, frame, _file, _cache, _result);
+			fprintf (_file, "\n");
 		};
 		FILE *file = fopen (data_filename.c_str (), "w");
 		experiment.parameters.fold4_frames_IF (func, &experiment, file, &cache, result);
@@ -402,20 +403,26 @@ map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const
 void read_pixel_count_difference (const Parameters &parameters, const string &filename, vector<QVector<double> > *data)
 {
 	fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
-	typedef void (*fold_func) (vector<QVector<double> > *, FILE *, unsigned int );
-	fold_func func = [] (vector<QVector<double> > *_result, FILE *_file, unsigned int number_ROIs) {
+	typedef void (*fold_func) (unsigned int, vector<QVector<double> > *, FILE *, unsigned int );
+	fold_func func = [] (unsigned int index_frame, vector<QVector<double> > *_result, FILE *_file, unsigned int number_ROIs) {
 		for (unsigned int index_mask = 0; index_mask < number_ROIs; index_mask++) {
 			int value;
-			if (index_mask > 0)
-				fscanf (_file, ",%d", &value);
-			else
-				fscanf (_file, "%d", &value);
+			int ret;
+			ret = fscanf (_file, (index_mask > 0 ? ",%d" : "%d"), &value);
+			if (ret == 0) {
+				fprintf (stderr, "Error reading the %d-th pixel count value of the %d-th frame!\n", 2 * index_mask + 1, index_frame);
+				exit (1);
+			}
 			(*_result) [index_mask * 2].append (value);
-			fscanf (_file, ",%d", &value);
+			ret = fscanf (_file, ",%d", &value);
+			if (ret == 0) {
+				fprintf (stderr, "Error reading the %d-th pixel count value of the %d-th frame!\n", 2 * (index_mask + 1), index_frame);
+				exit (1);
+			}
 			(*_result) [index_mask * 2 + 1].append (value);
 		}
 	};
 	FILE *file = fopen (filename.c_str (), "r");
-	parameters.fold3_frames_V (func, data, file, parameters.number_ROIs);
+	parameters.fold3_frames_I (func, data, file, parameters.number_ROIs);
 	fclose (file);
 }

@@ -121,7 +121,7 @@ public:
 		}
 		fprintf (stderr, "\n");
 	}
-	template<typename A, typename B, typename C> void fold3_frames_I (void (*func) (unsigned int, A *, B *, C *), A *acc1, B *acc2, C *acc3) const
+	template<typename A, typename B, typename C> void fold3_frames_I (void (*func) (unsigned int, A, B, C), A acc1, B acc2, C acc3) const
 	{
 		for (unsigned int index_frame = 1; index_frame <= this->number_frames; index_frame++) {
 			func (index_frame, acc1, acc2, acc3);
