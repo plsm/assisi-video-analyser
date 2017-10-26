@@ -4,7 +4,7 @@
 
 using namespace std;
 
-StadiumArena3CASUs::StadiumArena3CASUs (const Parameters &parameters):
+StadiumArena3CASUs::StadiumArena3CASUs (const RunParameters &parameters):
 	Arena (3)
 {
 	YAML::Node config = YAML::LoadFile (parameters.folder + "/roi.properties");

@@ -11,13 +11,13 @@
 class Animate:
 	public QObject
 {
-	Q_OBJECT;
-	const Parameters &parameters;
+	Q_OBJECT
+	const RunParameters &parameters;
 	bool is_playing;
 	QTimer *timer;
 	Ui_MainWindow *ui;
 public:
-	Animate (const Parameters &parameters, Ui_MainWindow *ui);
+	Animate (const RunParameters &parameters, Ui_MainWindow *ui);
 	virtual ~Animate ();
 public slots:
 	void tick ();

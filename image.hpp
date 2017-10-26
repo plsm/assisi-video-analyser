@@ -25,7 +25,7 @@ inline cv::Mat read_image (const std::string &filename)
 /**
  * Read the background image located in the folder parameter.
  */
-inline cv::Mat read_background (const Parameters &parameters)
+inline cv::Mat read_background (const RunParameters &parameters)
 {
 	return cv::imread (parameters.background_filename (), CV_LOAD_IMAGE_GRAYSCALE);
 }
@@ -33,7 +33,7 @@ inline cv::Mat read_background (const Parameters &parameters)
 /**
  * Read the nth frame located in the folder parameter.
  */
-inline cv::Mat read_frame (const Parameters &parameters, unsigned int index_frame)
+inline cv::Mat read_frame (const RunParameters &parameters, unsigned int index_frame)
 {
 	return cv::imread (parameters.frame_filename (index_frame), CV_LOAD_IMAGE_GRAYSCALE);
 }

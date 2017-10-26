@@ -23,7 +23,6 @@ class VideoAnalyser:
 	Q_OBJECT
 	Ui_MainWindow ui;
 	Experiment &experiment;
-	UserParameters user_parameters;
 public:
 	VideoAnalyser (Experiment &experiment);
 public slots:
@@ -36,6 +35,7 @@ public slots:
 	void update_filtered_intensity (int);
 	void update_displayed_pixel_count_difference_plots ();
 	void update_displayed_histograms ();
+	void rectangular_area_changed (int);
 private:
 	Animate animate;
 	QGraphicsItem *imageItem;

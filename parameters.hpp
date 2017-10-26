@@ -5,7 +5,10 @@
 #include <string>
 #include <opencv2/core/core.hpp>
 
-class Parameters
+/**
+ * @brief The RunParameters class represents parameters used to perform an experimental run.
+ */
+class RunParameters
 {
 	unsigned int compute_number_frames () const;
 	cv::Size compute_frame_size () const;
@@ -18,9 +21,8 @@ public:
 	const unsigned int number_frames;
 	const unsigned int same_colour_level;
 	const cv::Size frame_size;
-	Parameters ();
-	Parameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
-	static Parameters parse (int argc, char *argv[]);
+	RunParameters ();
+	RunParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
 	std::string background_filename () const
 	{
 		return folder + "/background." + frame_file_type;
@@ -47,12 +49,6 @@ public:
 	{
 		return this->folder + "/histogram-frames-all.csv";
 	}
-	std::string histogram_frames_rect (int x1, int y1, int x2, int y2) const
-	{
-		return this->folder + "/histogram-frames-rect-" +
-		std::to_string (x1) + "-" + std::to_string (y1) + "-" +
-		std::to_string (x2) + "-" + std::to_string (y2) + ".csv";
-	}
 	std::string features_pixel_count_difference_raw_filename () const
 	{
 		return this->folder + "/features_pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-raw.csv";
@@ -60,18 +56,6 @@ public:
 	std::string features_pixel_count_difference_histogram_equalization_filename () const
 	{
 		return this->folder + "/features-pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-histogram-equalization.csv";
-	}
-	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename (int x1, int y1, int x2, int y2) const
-	{
-		return this->folder + "/features-pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-light-calibration-most-common-colour-" +
-		std::to_string (x1) + "-" + std::to_string (y1) + "-" +
-		std::to_string (x2) + "-" + std::to_string (y2) + ".csv";
-	}
-	std::string highest_colour_level_frames_rect_filename (int x1, int y1, int x2, int y2) const
-	{
-		return this->folder + "/highest-colour-level-frames-rect-" +
-		std::to_string (x1) + "-" + std::to_string (y1) + "-" +
-		std::to_string (x2) + "-" + std::to_string (y2) + ".csv";
 	}
 	void fold0_frames_IF (void (*func) (unsigned int, const std::string &)) const
 	{
@@ -161,16 +145,56 @@ public:
 	}
 };
 
-typedef enum {CURRENT_FRAME, DIFF_BACKGROUND_IMAGE, DIFF_PREVIOUS_IMAGE, SPECIAL_DATA, LIGHT_CALIBRATED} ImageData;
+typedef enum {BACKGROUND_IMAGE, CURRENT_FRAME, DIFF_BACKGROUND_IMAGE, DIFF_PREVIOUS_IMAGE, SPECIAL_DATA, LIGHT_CALIBRATED} ImageData;
 
 /**
  * Parameters that the user can set and that affect image processing functions.
  */
-class UserParameters
+class UserParameters: public RunParameters
 {
+	std::string rectangle () const
+	{
+		return
+		    std::to_string (this->x1) + "-" + std::to_string (this->y1) + "-" +
+		    std::to_string (this->x2) + "-" + std::to_string (this->y2);
+	}
+	UserParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
 public:
 	bool equalize_histograms;
 	ImageData image_data;
+	/**
+	 * @brief x1 lowest horizontal coordinate of the rectangular area used in light calibration.
+	 */
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+	static UserParameters parse (int argc, char *argv[]);
+	std::string histogram_frames_rect () const
+	{
+		return this->folder +
+		       "/histogram-frames-rect-" +
+		       this->rectangle () +
+		       ".csv";
+	}
+	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename () const
+	{
+		return this->folder +
+		       "/features-pixel-count-difference-" +
+		       std::to_string (this->same_colour_threshold) +
+		       "-light-calibration-most-common-colour-" +
+		       rectangle () +
+		       ".csv";
+	}
+	std::string highest_colour_level_frames_rect_filename () const
+	{
+		return this->folder +
+		       "/highest-colour-level-frames-rect-" +
+		       rectangle () +
+		       ".csv";
+	}
 };
+
+typedef UserParameters Parameters;
 
 #endif

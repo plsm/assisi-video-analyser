@@ -7,10 +7,10 @@
 
 using namespace std;
 
-static map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const string &filename);
-static void read_pixel_count_difference (const Parameters &parameters, const string &filename, vector<QVector<double> > *data);
+static map<int, Histogram> *read_histograms_frames (const RunParameters &parameters, const string &filename);
+static void read_pixel_count_difference (const RunParameters &parameters, const string &filename, vector<QVector<double> > *data);
 
-Histogram *compute_histogram_background (const Parameters &parameters)
+Histogram *compute_histogram_background (const RunParameters &parameters)
 {
 	fprintf (stderr, "Computing histogram of background image\n");
 	Histogram *result = new Histogram ();
@@ -32,14 +32,14 @@ Histogram *compute_histogram_background (const Parameters &parameters)
 	return result;
 }
 
-map<int, Histogram> *compute_histogram_frames_all (const Parameters &parameters)
+map<int, Histogram> *compute_histogram_frames_all (const RunParameters &parameters)
 {
 	fprintf (stderr, "Computing histogram of entire video frames\n");
 	map<int, Histogram> *result;
 	string filename = parameters.histogram_frames_all_filename ();
 	if (access (filename.c_str (), F_OK) == 0) {
 		fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
-		result = read_histograms_frames(parameters, filename);
+		result = read_histograms_frames (parameters, filename);
 	}
 	else {
 		fprintf (stderr, "  processing video frames in folder %s\n", parameters.folder.c_str ());
@@ -67,11 +67,15 @@ map<int, Histogram> *compute_histogram_frames_all (const Parameters &parameters)
 // }
 
 
-map<int, Histogram> *compute_histogram_frames_rect (const Parameters &parameters, int x1, int y1, int x2, int y2)
+map<int, Histogram> *compute_histogram_frames_rect (const UserParameters &parameters)
 {
-	fprintf (stderr, "Computing histogram of rectangle (%d,%d)-(%d,%d) in all video frames\n", x1, y1, x2, y2);
+	fprintf (stderr, "Computing histogram of rectangle (%d,%d)-(%d,%d) in all video frames\n",
+	         parameters.x1,
+	         parameters.y1,
+	         parameters.x2,
+	         parameters.y2);
 	map<int, Histogram> *result;
-	string filename = parameters.histogram_frames_rect (x1, y1, x2, y2);
+	string filename = parameters.histogram_frames_rect ();
 	if (access (filename.c_str (), F_OK) == 0) {
 		fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
 		result = read_histograms_frames (parameters, filename.c_str ());
@@ -82,7 +86,7 @@ map<int, Histogram> *compute_histogram_frames_rect (const Parameters &parameters
 		result = new map<int, Histogram> ();
 		for (unsigned int index_frame = 1; index_frame <= parameters.number_frames; index_frame++) {
 			Image frame = read_frame (parameters, index_frame);
-			compute_histogram (frame, x1, y1, x2, y2, (*result) [index_frame]);
+			compute_histogram (frame, parameters.x1, parameters.y1, parameters.x2, parameters.y2, (*result) [index_frame]);
 			(*result) [index_frame].write (file);
 			fprintf (file, "\n");
 			fprintf (stderr, "\r    %d", index_frame);
@@ -105,13 +109,13 @@ void delete_histograms (map<int, QVector<double> *> *histograms)
 
 // functions that operate on images
 
-cv::Mat compute_difference_background_image (const Parameters &parameters, const UserParameters &user_parameters, int index_frame)
+cv::Mat compute_difference_background_image (const UserParameters &parameters, int index_frame)
 {
 	cv::Mat background = cv::imread (parameters.background_filename (), CV_LOAD_IMAGE_GRAYSCALE);
 	cv::Mat frame = cv::imread (parameters.frame_filename (index_frame), CV_LOAD_IMAGE_GRAYSCALE);
 	cv::Mat diff;
 	cv::absdiff (background, frame, diff);
-	if (user_parameters.equalize_histograms) {
+	if (parameters.equalize_histograms) {
 		cv::Mat result;
 		cv::equalizeHist (diff, result);
 		return result;
@@ -120,13 +124,13 @@ cv::Mat compute_difference_background_image (const Parameters &parameters, const
 		return diff;
 }
 
-cv::Mat compute_difference_previous_image (const Parameters &parameters, const UserParameters &user_parameters, int index_frame)
+cv::Mat compute_difference_previous_image (const UserParameters &parameters, int index_frame)
 {
 	cv::Mat current_frame = read_frame (parameters, index_frame);
 	cv::Mat previous_frame = read_frame (parameters, index_frame - parameters.delta_frame);
 	cv::Mat diff;
 	cv::absdiff (previous_frame, current_frame, diff);
-	if (user_parameters.equalize_histograms) {
+	if (parameters.equalize_histograms) {
 		cv::Mat result;
 		cv::equalizeHist (diff, result);
 		return result;
@@ -135,7 +139,7 @@ cv::Mat compute_difference_previous_image (const Parameters &parameters, const U
 		return diff;
 }
 
-cv::Mat compute_threshold_mask_diff_background_diff_previous (const Parameters &parameters, int index_frame)
+cv::Mat compute_threshold_mask_diff_background_diff_previous (const RunParameters &parameters, int index_frame)
 {
 	cv::Mat background = read_background (parameters);
 	cv::Mat current_frame = read_frame (parameters, index_frame);
@@ -151,10 +155,16 @@ cv::Mat compute_threshold_mask_diff_background_diff_previous (const Parameters &
 
 cv::Mat light_calibration (const Experiment &experiment, unsigned int index_frame)
 {
-	cv::Mat background = read_background (experiment.parameters);
+	cv::Mat background_rect = cv::Mat (
+	         experiment.background,
+	         cv::Range (experiment.parameters.y1, experiment.parameters.y2),
+	         cv::Range (experiment.parameters.x1, experiment.parameters.x2));
+	Histogram histogram;
+	compute_histogram (background_rect, histogram);
 	cv::Mat frame = read_frame (experiment.parameters, index_frame);
-	unsigned char pb = experiment.histogram_background_raw->most_common_colour ();
+	unsigned char pb = histogram.most_common_colour ();
 	unsigned char pf = (*experiment.highest_colour_level_frames_rect) [index_frame - 1];
+	fprintf (stderr, "Light calibration frame #%d with pb=%d and pf=%d\n", index_frame, pb, pf);
 	for(int i = 0; i < frame.rows; i++)
 		for(int j = 0; j < frame.cols; j++) {
 			unsigned char old_value = frame.at<unsigned char> (i, j);
@@ -166,7 +176,7 @@ cv::Mat light_calibration (const Experiment &experiment, unsigned int index_fram
 	return frame;
 }
 
-vector<QVector<double> > *compute_pixel_count_difference_raw (const Parameters &parameters)
+vector<QVector<double> > *compute_pixel_count_difference_raw (const RunParameters &parameters)
 {
 	fprintf (stderr, "Computing pixel count difference raw between background images and current frame and between current frame and %d frame afar\n", parameters.delta_frame);
 	vector<QVector<double> > *result = new vector<QVector<double> > (2 * parameters.number_ROIs);
@@ -319,11 +329,11 @@ vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization 
 	return result;
 }
 
-vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour (const Experiment &experiment, int x1, int y1, int x2, int y2)
+vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour (const Experiment &experiment)
 {
 	fprintf (stderr, "Computing pixel count difference on images that have gone through histogram equalization between background images and current frame and between current frame and %d frame afar\n", experiment.parameters.delta_frame);
 	vector<QVector<double> > *result = new vector<QVector<double> > (2 * experiment.parameters.number_ROIs);
-	string data_filename = experiment.parameters.features_pixel_count_difference_light_calibrated_most_common_colour_filename (x1, y1, x2, y2);
+	string data_filename = experiment.parameters.features_pixel_count_difference_light_calibrated_most_common_colour_filename ();
 	if (access (data_filename.c_str (), F_OK) == 0) {
 		read_pixel_count_difference (experiment.parameters, data_filename, result);
 	}
@@ -346,11 +356,11 @@ vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_c
 	return result;
 }
 
-QVector<double> *compute_highest_colour_level_frames_rect (const Parameters &parameters, int x1, int y1, int x2, int y2)
+QVector<double> *compute_highest_colour_level_frames_rect (const UserParameters &parameters)
 {
 	fprintf (stderr, "Computing the colour level with highest count in the histogram of a rectangular are in frames\n");
 	QVector<double> *result = new QVector<double> ();
-	string filename = parameters.highest_colour_level_frames_rect_filename (x1, y1, x2, y2);
+	string filename = parameters.highest_colour_level_frames_rect_filename ();
 	if (access (filename.c_str (), F_OK) == 0) {
 		fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
 		FILE *file = fopen (filename.c_str (), "r");
@@ -366,7 +376,7 @@ QVector<double> *compute_highest_colour_level_frames_rect (const Parameters &par
 	else {
 		fprintf (stderr, "  computing from frames histograms\n");
 		FILE *file = fopen (filename.c_str (), "w");
-		map<int, Histogram> *map_histograms = compute_histogram_frames_rect (parameters, x1, y1, x2, y2);
+		map<int, Histogram> *map_histograms = compute_histogram_frames_rect (parameters);
 		typedef void (*fold3_func) (unsigned int, map<int, Histogram> *, QVector<double> *, FILE *);
 		fold3_func func3 = [] (unsigned int index_frame, map<int, Histogram> *_map_histograms, QVector<double> *_result, FILE *_file) {
 			const Histogram &an_histogram = _map_histograms->at (index_frame);
@@ -389,7 +399,7 @@ QVector<double> *compute_highest_colour_level_frames_rect (const Parameters &par
 
 // private functions
 
-map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const string &filename)
+map<int, Histogram> *read_histograms_frames (const RunParameters &parameters, const string &filename)
 {
 	map<int, Histogram> *result = new map<int, Histogram> ();
 	FILE *file = fopen (filename.c_str (), "r");
@@ -400,7 +410,7 @@ map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const
 	return result;
 }
 
-void read_pixel_count_difference (const Parameters &parameters, const string &filename, vector<QVector<double> > *data)
+void read_pixel_count_difference (const RunParameters &parameters, const string &filename, vector<QVector<double> > *data)
 {
 	fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
 	typedef void (*fold_func) (unsigned int, vector<QVector<double> > *, FILE *, unsigned int );

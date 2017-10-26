@@ -1,6 +1,6 @@
 #include "animate.hpp"
 
-Animate::Animate (const Parameters &parameters, Ui_MainWindow *ui):
+Animate::Animate (const RunParameters &parameters, Ui_MainWindow *ui):
 	QObject (),
 	parameters (parameters),
 	is_playing (false),

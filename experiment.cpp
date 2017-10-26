@@ -3,7 +3,7 @@
 #include "image.hpp"
 #include "process-image.hpp"
 
-Experiment::Experiment (const Parameters &parameters):
+Experiment::Experiment (UserParameters &parameters):
 	parameters (parameters),
 	masks (parameters.number_ROIs),
 	histogram_background_raw (compute_histogram_background (parameters)),

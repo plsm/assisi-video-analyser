@@ -21,7 +21,7 @@ int main (int argc, char **argv)
 {
 	init ();
 	QApplication a (argc, argv);
-	Parameters parameters = Parameters::parse (argc, argv);
+	UserParameters parameters = UserParameters::parse (argc, argv);
 	if (parameters.number_frames == 0) {
 		fprintf (stderr, "There are no video frames in folder %s\n", parameters.folder.c_str ());
 		return 1;

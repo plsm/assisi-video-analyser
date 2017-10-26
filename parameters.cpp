@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <unistd.h>
+#include <limits>
 
 #include "parameters.hpp"
 #include "process-image.hpp"
@@ -8,7 +9,7 @@
 using namespace std;
 
 
-Parameters::Parameters ():
+RunParameters::RunParameters ():
 	// folder ("/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_770-amp_40-pause_420/run-files_frequency=770Hz_amplitude=40_vibration-period=580ms_pause-period=420ms_R#2/"),
 	folder ("/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_770-amp_40-pause_420/run-files_frequency=770Hz_amplitude=40_vibration-period=580ms_pause-period=420ms_R#12/"),
 	frame_file_type ("jpg"),
@@ -20,7 +21,7 @@ Parameters::Parameters ():
 {
 }
 
-Parameters::Parameters (const string &folder, const string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold):
+RunParameters::RunParameters (const string &folder, const string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold):
 	folder (folder),
 	frame_file_type (frame_file_type),
 	number_ROIs (number_ROIs),
@@ -32,7 +33,7 @@ Parameters::Parameters (const string &folder, const string &frame_file_type, uns
 {
 }
 
-Parameters Parameters::parse (int argc, char *argv[])
+UserParameters UserParameters::parse (int argc, char *argv[])
 {
 	bool ok = true;
 	const char *folder = "./";
@@ -72,10 +73,10 @@ Parameters Parameters::parse (int argc, char *argv[])
 			break;
 		}
 	} while (ok);
-	return Parameters (folder, frame_file_type, 3, delta_frame, same_colour_threshold);
+	return UserParameters (folder, frame_file_type, 3, delta_frame, same_colour_threshold);
 }
 
-unsigned int Parameters::compute_number_frames () const
+unsigned int RunParameters::compute_number_frames () const
 {
 	unsigned int low, high;
 	high = 1;
@@ -93,7 +94,18 @@ unsigned int Parameters::compute_number_frames () const
 	return low;
 }
 
-cv::Size Parameters::compute_frame_size () const
+cv::Size RunParameters::compute_frame_size () const
 {
 	return read_background (*this).size ();
+}
+
+UserParameters::UserParameters (const string &folder, const string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold):
+   RunParameters (folder, frame_file_type, number_ROIs, delta_frame, same_colour_threshold),
+   equalize_histograms (false),
+   image_data (CURRENT_FRAME),
+   x1 (numeric_limits<int>::max ()),
+   y1 (numeric_limits<int>::max ()),
+   x2 (numeric_limits<int>::min ()),
+   y2 (numeric_limits<int>::min ())
+{
 }

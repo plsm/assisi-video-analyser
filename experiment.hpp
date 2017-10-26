@@ -12,7 +12,7 @@
 
 class Experiment {
 public:
-	const Parameters &parameters;
+	UserParameters &parameters;
 	cv::Mat background;
 	std::vector<cv::Mat> masks;
 	/**
@@ -54,7 +54,7 @@ public:
 
 	QVector<double> X_FRAMES;
 
-	Experiment (const Parameters &parameters);
+	Experiment (UserParameters &parameters);
 	virtual ~Experiment ();
 };
 

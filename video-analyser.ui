@@ -318,9 +318,19 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
+           <widget class="QRadioButton" name="showBackgroundImageRadioButton">
+            <property name="text">
+             <string>background</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QRadioButton" name="showVideoFrameRadioButton">
             <property name="text">
-             <string>video frame</string>
+             <string>frame</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>

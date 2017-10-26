@@ -55,6 +55,8 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		vertical_spinBoxes [i]->setMinimum (0);
 		vertical_spinBoxes [i]->setMaximum (experiment.background.size ().height);
 	}
+	ui.x2SpinBox->setValue (experiment.background.size ().width);
+	ui.y2SpinBox->setValue (experiment.background.size ().height);
 	ui.currentFrameSpinBox->setMinimum (1);
 	ui.currentFrameSpinBox->setMaximum (experiment.parameters.number_frames);
 	struct Graph_Info {
@@ -160,6 +162,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.showDiffBackgroundRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.showVideoFrameRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.lightCalibratedRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
+	QObject::connect (ui.showBackgroundImageRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.cropToRectCheckBox, SIGNAL (clicked ()), this, SLOT (crop_to_rect ()));
 	QObject::connect (ui.histogramEqualisationCheckBox, SIGNAL (stateChanged (int)), this, SLOT (histogram_equalisation (int)));
 	QObject::connect (ui.currentFrameSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_data (int)));
@@ -174,10 +177,16 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.histogramBackroundCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
 	QObject::connect (ui.currentFrameCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
 	QObject::connect (ui.lightCalibratedHistogramsCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
+	QObject::connect (ui.x1SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
+	QObject::connect (ui.x2SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
+	QObject::connect (ui.y1SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
+	QObject::connect (ui.y2SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
 	//
-	this->user_parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
+	this->experiment.parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	this->update_data (this->ui.currentFrameSpinBox->value ());
 }
+
+// SLOTS
 
 void VideoAnalyser::update_data (int current_frame)
 {
@@ -191,7 +200,7 @@ void VideoAnalyser::update_data (int current_frame)
 
 void VideoAnalyser::histogram_equalisation (int)
 {
-	this->user_parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
+	this->experiment.parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	if (this->ui.showDiffPreviousRadioButton->isChecked () ||
 		 this->ui.showDiffBackgroundRadioButton->isChecked ())
 		this->update_image (this->ui.currentFrameSpinBox->value ());
@@ -201,25 +210,29 @@ void VideoAnalyser::update_displayed_image ()
 {
 	bool change = false;
 	if (this->ui.showVideoFrameRadioButton->isChecked ()) {
-		change = this->user_parameters.image_data != CURRENT_FRAME;
-		this->user_parameters.image_data = CURRENT_FRAME;
+		change = this->experiment.parameters.image_data != CURRENT_FRAME;
+		this->experiment.parameters.image_data = CURRENT_FRAME;
+	}
+	else if (this->ui.showBackgroundImageRadioButton->isChecked ()) {
+		change = this->experiment.parameters.image_data != BACKGROUND_IMAGE;
+		this->experiment.parameters.image_data = BACKGROUND_IMAGE;
 	}
 	else if (this->ui.showDiffPreviousRadioButton->isChecked () && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame) {
-		change = this->user_parameters.image_data != DIFF_PREVIOUS_IMAGE;
-		this->user_parameters.image_data = DIFF_PREVIOUS_IMAGE;
+		change = this->experiment.parameters.image_data != DIFF_PREVIOUS_IMAGE;
+		this->experiment.parameters.image_data = DIFF_PREVIOUS_IMAGE;
 	}
 	else if (this->ui.showDiffBackgroundRadioButton->isChecked ()) {
-		change = this->user_parameters.image_data != DIFF_BACKGROUND_IMAGE;
-		this->user_parameters.image_data = DIFF_BACKGROUND_IMAGE;
+		change = this->experiment.parameters.image_data != DIFF_BACKGROUND_IMAGE;
+		this->experiment.parameters.image_data = DIFF_BACKGROUND_IMAGE;
 	}
 	else if (this->ui.specialOperationRadioButton->isChecked () && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame) {
-		change = this->user_parameters.image_data != SPECIAL_DATA;
-		this->user_parameters.image_data = SPECIAL_DATA;
+		change = this->experiment.parameters.image_data != SPECIAL_DATA;
+		this->experiment.parameters.image_data = SPECIAL_DATA;
 	}
 	else if (this->ui.lightCalibratedRadioButton->isChecked ()
 	         && this->experiment.highest_colour_level_frames_rect != NULL){
-		change = this->user_parameters.image_data != LIGHT_CALIBRATED;
-		this->user_parameters.image_data = LIGHT_CALIBRATED;
+		change = this->experiment.parameters.image_data != LIGHT_CALIBRATED;
+		this->experiment.parameters.image_data = LIGHT_CALIBRATED;
 	}
 	if (change) {
 		this->update_image (this->ui.currentFrameSpinBox->value ());
@@ -234,25 +247,28 @@ void VideoAnalyser::crop_to_rect ()
 
 void VideoAnalyser::update_rect_data ()
 {
-	int x1 = this->ui.x1SpinBox->value ();
-	int y1 = this->ui.y1SpinBox->value ();
-	int x2 = this->ui.x2SpinBox->value ();
-	int y2 = this->ui.y2SpinBox->value ();
+	this->experiment.parameters.x1 = this->ui.x1SpinBox->value ();
+	this->experiment.parameters.y1 = this->ui.y1SpinBox->value ();
+	this->experiment.parameters.x2 = this->ui.x2SpinBox->value ();
+	this->experiment.parameters.y2 = this->ui.y2SpinBox->value ();
 	int current_frame = this->ui.currentFrameSpinBox->value ();
 	delete this->experiment.histogram_frames_rect_raw;
-	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters, x1, y1, x2, y2);
+	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters);
 	this->ui.histogramView->graph (2)->setData (X_COLOURS, (*this->experiment.histogram_frames_rect_raw) [current_frame]);
-	cv::Mat cropped (this->experiment.background, cv::Range (y1, y2), cv::Range (x1, x2));
+	cv::Mat cropped (
+	         this->experiment.background,
+	         cv::Range (this->experiment.parameters.y1, this->experiment.parameters.y2),
+	         cv::Range (this->experiment.parameters.x1, this->experiment.parameters.x2));
 	Histogram histogram;
 	compute_histogram (cropped, histogram);
 	this->ui.histogramView->graph (3)->setData (X_COLOURS, histogram);
 	this->ui.histogramView->replot ();
 	delete this->experiment.highest_colour_level_frames_rect;
-	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters, x1, y1, x2, y2);
+	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters);
 	this->ui.plotColourView->graph (0)->setData (this->experiment.X_FRAMES, *this->experiment.highest_colour_level_frames_rect);
 	this->ui.plotColourView->replot ();
 	delete this->experiment.pixel_count_difference_light_calibrated_most_common_colour;
-	this->experiment.pixel_count_difference_light_calibrated_most_common_colour = compute_pixel_count_difference_light_calibrated_most_common_colour (this->experiment, x1, y1, x2, y2);
+	this->experiment.pixel_count_difference_light_calibrated_most_common_colour = compute_pixel_count_difference_light_calibrated_most_common_colour (this->experiment);
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 		this->ui.plotBeeSpeedView->graph (experiment.parameters.number_ROIs + i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_light_calibrated_most_common_colour) [i * 2 + 1]);
 		this->ui.plotNumberBeesView->graph (experiment.parameters.number_ROIs + i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_light_calibrated_most_common_colour) [i * 2]);
@@ -295,29 +311,40 @@ void VideoAnalyser::update_displayed_histograms ()
 	this->ui.histogramView->replot ();
 }
 
+void VideoAnalyser::rectangular_area_changed (int)
+{
+	ui.x1SpinBox->setMaximum (ui.x2SpinBox->value () - 1);
+	ui.x2SpinBox->setMinimum (ui.x1SpinBox->value () + 1);
+	ui.y1SpinBox->setMaximum (ui.y2SpinBox->value () - 1);
+	ui.y2SpinBox->setMinimum (ui.y1SpinBox->value () + 1);
+	if (ui.cropToRectCheckBox->isChecked ())
+		this->update_image (ui.currentFrameSpinBox->value ());
+}
+
+// VideoAnalyser PRIVATE METHODS
+
 void VideoAnalyser::update_image (int current_frame)
 {
 	cv::Mat image, mask;
-	switch (this->user_parameters.image_data) {
+	switch (this->experiment.parameters.image_data) {
+	case BACKGROUND_IMAGE:
+		image = this->experiment.background;
+		break;
 	case CURRENT_FRAME:
 		image = read_frame (this->experiment.parameters, current_frame);
 		break;
-	case DIFF_BACKGROUND_IMAGE: {
-		image = compute_difference_background_image (this->experiment.parameters, this->user_parameters, current_frame);
+	case DIFF_BACKGROUND_IMAGE:
+		image = compute_difference_background_image (this->experiment.parameters, current_frame);
 		break;
-	}
-	case DIFF_PREVIOUS_IMAGE: {
-		image = compute_difference_previous_image (this->experiment.parameters, this->user_parameters, current_frame);
+	case DIFF_PREVIOUS_IMAGE:
+		image = compute_difference_previous_image (this->experiment.parameters, current_frame);
 		break;
-	}
-	case SPECIAL_DATA: {
+	case SPECIAL_DATA:
 		image = compute_threshold_mask_diff_background_diff_previous (this->experiment.parameters, current_frame);
 		break;
-	}
-	case LIGHT_CALIBRATED: {
+	case LIGHT_CALIBRATED:
 		image = light_calibration (this->experiment, current_frame);
 		break;
-	}
 	}
 	if (this->ui.cropToRectCheckBox->isChecked ())
 		image = cv::Mat (image, cv::Range (this->ui.y1SpinBox->value (), this->ui.y2SpinBox->value ()), cv::Range (this->ui.x1SpinBox->value (), this->ui.x2SpinBox->value ()));
@@ -361,8 +388,8 @@ void VideoAnalyser::update_histogram_data (int current_frame)
 		const Histogram &histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
 		this->ui.histogramView->graph (2)->setData (X_COLOURS, histogram);
 	}
-	this->ui.histogramView->graph (4)->setVisible (this->user_parameters.image_data == LIGHT_CALIBRATED);
-	if (this->user_parameters.image_data == LIGHT_CALIBRATED) {
+	this->ui.histogramView->graph (4)->setVisible (this->experiment.parameters.image_data == LIGHT_CALIBRATED);
+	if (this->experiment.parameters.image_data == LIGHT_CALIBRATED) {
 		Histogram histogram;
 		cv::Mat _image = light_calibration (this->experiment, current_frame);
 		compute_histogram (_image, histogram);

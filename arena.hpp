@@ -37,7 +37,7 @@ public:
 class StadiumArena3CASUs: public Arena
 {
 public:
-	StadiumArena3CASUs (const Parameters &parameters);
+        StadiumArena3CASUs (const RunParameters &parameters);
 };
 
 #endif
