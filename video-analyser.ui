@@ -85,6 +85,32 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
+       <item row="0" column="6">
+        <widget class="QGroupBox" name="groupBox_5">
+         <property name="title">
+          <string>plots</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QCheckBox" name="rawDataCheckBox">
+            <property name="text">
+             <string>raw data</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="lightCalibratedPlotsCheckBox">
+            <property name="text">
+             <string>light calibrated</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item row="0" column="3">
         <widget class="QGroupBox" name="groupBox_4">
          <property name="title">
@@ -116,62 +142,6 @@
            <widget class="QSpinBox" name="intensityAnalyseSpinBox">
             <property name="maximum">
              <number>255</number>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="0" column="5">
-        <widget class="QGroupBox" name="groupBox_3">
-         <property name="title">
-          <string>rectangle analyse</string>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <item>
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>x1</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="x1SpinBox"/>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>y1</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="y1SpinBox"/>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>x2</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="x2SpinBox"/>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>y2</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="y2SpinBox"/>
-          </item>
-          <item>
-           <widget class="QPushButton" name="updateRectPushButton">
-            <property name="text">
-             <string>update</string>
             </property>
            </widget>
           </item>
@@ -266,7 +236,76 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="0" colspan="6">
+       <item row="0" column="2">
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>42</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="5">
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>rectangle analyse</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>x1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="x1SpinBox"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>y1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="y1SpinBox"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>x2</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="x2SpinBox"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>y2</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="y2SpinBox"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="updateRectPushButton">
+            <property name="text">
+             <string>update</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="7">
         <widget class="QGroupBox" name="groupBox_2">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
@@ -275,7 +314,7 @@
           </sizepolicy>
          </property>
          <property name="title">
-          <string>presented data</string>
+          <string>image</string>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
@@ -334,13 +373,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="histogramBackroundCheckBox">
-            <property name="text">
-             <string>histogram background frame</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QCheckBox" name="filterToIntensityCheckBox">
             <property name="text">
              <string>filter to intensity</string>
@@ -370,37 +402,28 @@
          </layout>
         </widget>
        </item>
-       <item row="0" column="2">
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>42</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="0" column="1">
-        <widget class="QGroupBox" name="groupBox_5">
+       <item row="0" column="7" rowspan="2">
+        <widget class="QGroupBox" name="groupBox_6">
          <property name="title">
-          <string>plots</string>
+          <string>histograms</string>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QCheckBox" name="rawDataCheckBox">
+           <widget class="QCheckBox" name="histogramBackroundCheckBox">
             <property name="text">
-             <string>raw data</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
+             <string>background</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="lightCalibratedCheckBox">
+           <widget class="QCheckBox" name="currentFrameCheckBox">
+            <property name="text">
+             <string>current frame</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="lightCalibratedHistogramsCheckBox">
             <property name="text">
              <string>light calibrated</string>
             </property>

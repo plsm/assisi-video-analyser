@@ -62,10 +62,10 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		QPen pen;
 	};
 	Graph_Info graph_info[] = {
-		{.legend = "current frame - no cropping"       , .pen = QPen (Qt::green   , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "background - no cropping"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "current frame - cropped rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "background - cropped rectangle"    , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+	   {.legend = "current frame - no cropping"       , .pen = QPen (Qt::green   , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+	   {.legend = "background - no cropping"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+	   {.legend = "current frame - cropped rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+	   {.legend = "background - cropped rectangle"    , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
 		{.legend = "current frame light calibrated"    , .pen = QPen (QColor (127, 127, 0)  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
 	for (int i = 0; i < 5; i++) {
@@ -170,7 +170,10 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.intensityAnalyseSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	QObject::connect (ui.sameColourThresholdSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	QObject::connect (ui.rawDataCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
-	QObject::connect (ui.lightCalibratedCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
+	QObject::connect (ui.lightCalibratedPlotsCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
+	QObject::connect (ui.histogramBackroundCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
+	QObject::connect (ui.currentFrameCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
+	QObject::connect (ui.lightCalibratedHistogramsCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
 	//
 	this->user_parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	this->update_data (this->ui.currentFrameSpinBox->value ());
@@ -275,11 +278,21 @@ void VideoAnalyser::update_displayed_pixel_count_difference_plots ()
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 		this->ui.plotBeeSpeedView->graph (i)->setVisible (this->ui.rawDataCheckBox->isChecked());
 		this->ui.plotNumberBeesView->graph (i)->setVisible (this->ui.rawDataCheckBox->isChecked());
-		this->ui.plotBeeSpeedView->graph (experiment.parameters.number_ROIs + i)->setVisible (this->ui.lightCalibratedCheckBox->isChecked());
-		this->ui.plotNumberBeesView->graph (experiment.parameters.number_ROIs + i)->setVisible (this->ui.lightCalibratedCheckBox->isChecked());
+		this->ui.plotBeeSpeedView->graph (experiment.parameters.number_ROIs + i)->setVisible (this->ui.lightCalibratedPlotsCheckBox->isChecked());
+		this->ui.plotNumberBeesView->graph (experiment.parameters.number_ROIs + i)->setVisible (this->ui.lightCalibratedPlotsCheckBox->isChecked());
 	}
 	this->ui.plotBeeSpeedView->replot ();
 	this->ui.plotNumberBeesView->replot ();
+}
+
+void VideoAnalyser::update_displayed_histograms ()
+{
+	this->ui.histogramView->graph (0)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
+	this->ui.histogramView->graph (1)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
+	this->ui.histogramView->graph (2)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
+	this->ui.histogramView->graph (3)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
+	this->ui.histogramView->graph (4)->setVisible (this->ui.lightCalibratedHistogramsCheckBox->isChecked ());
+	this->ui.histogramView->replot ();
 }
 
 void VideoAnalyser::update_image (int current_frame)
