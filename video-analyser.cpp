@@ -92,21 +92,33 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	ui.histogramView->xAxis->setLabel ("intensity level");
 	ui.histogramView->yAxis->setRange (0, 50000);
 	ui.histogramView->yAxis->setLabel ("count");
-	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
-		QCPGraph *graph = this->ui.plotNumberBeesView->addGraph ();
-		graph->setName (QString (("number bees in ROI " + to_string (i + 1)).c_str ()));
-		graph->setPen (QPen (QColor (
-											  255 * i / (experiment.parameters.number_ROIs - 1),
-											  255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
-											  128,
-											  192)));
-		graph = this->ui.plotBeeSpeedView->addGraph ();
-		graph->setName (QString (("bee speed in ROI " + to_string (i + 1)).c_str ()));
-		graph->setPen (QPen (QColor (
-											  255 * i / (experiment.parameters.number_ROIs - 1),
-											  255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
-											  128,
-											  192)));
+	struct Graph_Info_2 {
+		string label;
+		Qt::PenStyle pen_style;
+	};
+	Graph_Info_2 feature_info[] = {
+	   {.label = "raw", .pen_style = Qt::SolidLine},
+	   {.label = "light calibrated most common colour", .pen_style = Qt::DashLine}
+	};
+	for (Graph_Info_2 gi : feature_info) {
+		for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
+			QCPGraph *graph = this->ui.plotNumberBeesView->addGraph ();
+			graph->setName (QString (("number bees in ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
+			graph->setPen (QPen (QColor (
+			                             255 * i / (experiment.parameters.number_ROIs - 1),
+			                             255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
+			                             128,
+			                             192),
+			                     1, gi.pen_style));
+			graph = this->ui.plotBeeSpeedView->addGraph ();
+			graph->setName (QString (("bee speed in ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
+			graph->setPen (QPen (QColor (
+			                             255 * i / (experiment.parameters.number_ROIs - 1),
+			                             255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
+			                             128,
+			                             192),
+			                     1, gi.pen_style));
+		}
 	}
 	this->ui.plotBeeSpeedView->legend->setVisible (true);
 	set_xaxis (this->ui.plotBeeSpeedView->xAxis);
@@ -234,6 +246,12 @@ void VideoAnalyser::update_rect_data ()
 	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters, x1, y1, x2, y2);
 	this->ui.plotColourView->graph (0)->setData (this->experiment.X_FRAMES, *this->experiment.highest_colour_level_frames_rect);
 	this->ui.plotColourView->replot ();
+	delete this->experiment.pixel_count_difference_light_calibrated_most_common_colour;
+	this->experiment.pixel_count_difference_light_calibrated_most_common_colour = compute_pixel_count_difference_light_calibrated_most_common_colour (this->experiment, x1, y1, x2, y2);
+	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
+		this->ui.plotBeeSpeedView->graph (experiment.parameters.number_ROIs + i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_light_calibrated_most_common_colour) [i * 2 + 1]);
+		this->ui.plotNumberBeesView->graph (experiment.parameters.number_ROIs + i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_light_calibrated_most_common_colour) [i * 2]);
+	}
 }
 
 void VideoAnalyser::filter_to_intensity ()

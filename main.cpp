@@ -26,7 +26,6 @@ int main (int argc, char **argv)
 		fprintf (stderr, "There are no video frames in folder %s\n", parameters.folder.c_str ());
 		return 1;
 	}
-	UserParameters user_parameters;
 	Experiment experiment (parameters);
 	StadiumArena3CASUs arena (parameters);
 	VideoAnalyser video_analyser (experiment);

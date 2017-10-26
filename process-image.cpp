@@ -8,6 +8,7 @@
 using namespace std;
 
 static map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const string &filename);
+static void read_pixel_count_difference (const Parameters &parameters, const string &filename, vector<QVector<double> > *data);
 
 Histogram *compute_histogram_background (const Parameters &parameters)
 {
@@ -318,6 +319,32 @@ vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization 
 	return result;
 }
 
+vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour (const Experiment &experiment, int x1, int y1, int x2, int y2)
+{
+	fprintf (stderr, "Computing pixel count difference on images that have gone through histogram equalization between background images and current frame and between current frame and %d frame afar\n", experiment.parameters.delta_frame);
+	vector<QVector<double> > *result = new vector<QVector<double> > (2 * experiment.parameters.number_ROIs);
+	string data_filename = experiment.parameters.features_pixel_count_difference_light_calibrated_most_common_colour_filename (x1, y1, x2, y2);
+	if (access (data_filename.c_str (), F_OK) == 0) {
+		read_pixel_count_difference (experiment.parameters, data_filename, result);
+	}
+	else {
+		fprintf (stderr, "  processing video frames in folder %s\n", experiment.parameters.folder.c_str ());
+		queue<cv::Mat> cache;
+		typedef void (*fold4_func) (unsigned int, const string &, const Experiment *, FILE *, queue<cv::Mat> *, vector<QVector<double> > *);
+		fold4_func func = [] (unsigned int index_frame, const string &filename, const Experiment *_experiment, FILE *_file, queue<cv::Mat> *_cache, vector<QVector<double> > *_result) {
+			cv::Mat frame = read_image (filename);
+			unsigned char pb = _experiment->histogram_background_raw->most_common_colour ();
+			unsigned char pf = (*_experiment->highest_colour_level_frames_rect) [index_frame - 1];
+			light_calibrate (frame, pb, pf);
+			compute_pixel_count_difference (*_experiment, _experiment->background, frame, _file, _cache, _result);
+		};
+		FILE *file = fopen (data_filename.c_str (), "w");
+		experiment.parameters.fold4_frames_IF (func, &experiment, file, &cache, result);
+		fclose (file);
+	}
+	return result;
+}
+
 QVector<double> *compute_highest_colour_level_frames_rect (const Parameters &parameters, int x1, int y1, int x2, int y2)
 {
 	fprintf (stderr, "Computing the colour level with highest count in the histogram of a rectangular are in frames\n");
@@ -370,4 +397,25 @@ map<int, Histogram> *read_histograms_frames (const Parameters &parameters, const
 	};
 	fclose (file);
 	return result;
+}
+
+void read_pixel_count_difference (const Parameters &parameters, const string &filename, vector<QVector<double> > *data)
+{
+	fprintf (stderr, "  reading data from file %s\n", filename.c_str ());
+	typedef void (*fold_func) (vector<QVector<double> > *, FILE *, unsigned int );
+	fold_func func = [] (vector<QVector<double> > *_result, FILE *_file, unsigned int number_ROIs) {
+		for (unsigned int index_mask = 0; index_mask < number_ROIs; index_mask++) {
+			int value;
+			if (index_mask > 0)
+				fscanf (_file, ",%d", &value);
+			else
+				fscanf (_file, "%d", &value);
+			(*_result) [index_mask * 2].append (value);
+			fscanf (_file, ",%d", &value);
+			(*_result) [index_mask * 2 + 1].append (value);
+		}
+	};
+	FILE *file = fopen (filename.c_str (), "r");
+	parameters.fold3_frames_V (func, data, file, parameters.number_ROIs);
+	fclose (file);
 }

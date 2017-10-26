@@ -10,6 +10,7 @@ Experiment::Experiment (const Parameters &parameters):
 	histogram_frames_all_raw (compute_histogram_frames_all (parameters)),
 	histogram_frames_rect_raw (NULL),
 	pixel_count_difference_raw (compute_pixel_count_difference_raw (parameters)),
+   pixel_count_difference_light_calibrated_most_common_colour (NULL),
 	highest_colour_level_frames_rect (NULL),
 	X_FRAMES (parameters.number_frames)
 {
@@ -31,5 +32,6 @@ Experiment::~Experiment ()
 	delete histogram_frames_all_raw;
 	delete histogram_frames_rect_raw;
 	delete pixel_count_difference_raw;
+	delete pixel_count_difference_light_calibrated_most_common_colour;
 	delete highest_colour_level_frames_rect;
 }

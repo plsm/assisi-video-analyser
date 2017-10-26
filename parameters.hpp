@@ -61,6 +61,12 @@ public:
 	{
 		return this->folder + "/features-pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-histogram-equalization.csv";
 	}
+	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename (int x1, int y1, int x2, int y2) const
+	{
+		return this->folder + "/features-pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-light-calibration-most-common-colour-" +
+		std::to_string (x1) + "-" + std::to_string (y1) + "-" +
+		std::to_string (x2) + "-" + std::to_string (y2) + ".csv";
+	}
 	std::string highest_colour_level_frames_rect_filename (int x1, int y1, int x2, int y2) const
 	{
 		return this->folder + "/highest-colour-level-frames-rect-" +
@@ -138,6 +144,16 @@ public:
 		for (unsigned int index_frame = 1; index_frame <= this->number_frames; index_frame++) {
 			std::string frame_filename = this->frame_filename (index_frame);
 			func (index_frame, frame_filename, acc1, acc2, acc3);
+			fprintf (stderr, "\r    %d", index_frame);
+			fflush (stderr);
+		}
+		fprintf (stderr, "\n");
+	}
+	template<typename A, typename B, typename C, typename D> void fold4_frames_IF (void (*func) (unsigned int, const std::string &, A, B, C, D), A acc1, B acc2, C acc3, D acc4) const
+	{
+		for (unsigned int index_frame = 1; index_frame <= this->number_frames; index_frame++) {
+			std::string frame_filename = this->frame_filename (index_frame);
+			func (index_frame, frame_filename, acc1, acc2, acc3, acc4);
 			fprintf (stderr, "\r    %d", index_frame);
 			fflush (stderr);
 		}
