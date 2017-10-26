@@ -24,8 +24,10 @@ void print_image (const cv::Mat &image, const char *name)
 		cv::Point (100, 100), cv::Point (110, 100), cv::Point (200, 200)
 	};
 	for (int i = 0; i < 3; i++)
-		fprintf (stderr, "   pixel value at %d %d is %d\n", points [i].x, points [i].y, (int) image.at<unsigned char> (points [i]));
-	cv::imshow (name, image);
+		if (points [i].x < image.size ().width && points [i].y < image.size ().height)
+			fprintf (stderr, "   pixel value at %d %d is %d\n", points [i].x, points [i].y, (int) image.at<unsigned char> (points [i]));
+	if (image.size ().width > 0 && image.size ().height > 0)
+		cv::imshow (name, image);
 }
 
 void print_histogram (const QVector<double> &histogram, const char *name)
