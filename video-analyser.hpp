@@ -34,6 +34,7 @@ public slots:
 	void update_rect_data ();
 	void filter_to_intensity ();
 	void update_filtered_intensity (int);
+	void update_displayed_pixel_count_difference_plots ();
 private:
 	Animate animate;
 	QGraphicsItem *imageItem;

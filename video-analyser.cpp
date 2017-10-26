@@ -169,6 +169,8 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.filterToIntensityCheckBox, SIGNAL (clicked ()), this, SLOT (filter_to_intensity ()));
 	QObject::connect (ui.intensityAnalyseSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	QObject::connect (ui.sameColourThresholdSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
+	QObject::connect (ui.rawDataCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
+	QObject::connect (ui.lightCalibratedCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
 	//
 	this->user_parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	this->update_data (this->ui.currentFrameSpinBox->value ());
@@ -266,6 +268,18 @@ void VideoAnalyser::update_filtered_intensity (int)
 	if (this->ui.filterToIntensityCheckBox->isChecked ()) {
 		this->update_image (this->ui.currentFrameSpinBox->value ());
 	}
+}
+
+void VideoAnalyser::update_displayed_pixel_count_difference_plots ()
+{
+	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
+		this->ui.plotBeeSpeedView->graph (i)->setVisible (this->ui.rawDataCheckBox->isChecked());
+		this->ui.plotNumberBeesView->graph (i)->setVisible (this->ui.rawDataCheckBox->isChecked());
+		this->ui.plotBeeSpeedView->graph (experiment.parameters.number_ROIs + i)->setVisible (this->ui.lightCalibratedCheckBox->isChecked());
+		this->ui.plotNumberBeesView->graph (experiment.parameters.number_ROIs + i)->setVisible (this->ui.lightCalibratedCheckBox->isChecked());
+	}
+	this->ui.plotBeeSpeedView->replot ();
+	this->ui.plotNumberBeesView->replot ();
 }
 
 void VideoAnalyser::update_image (int current_frame)
