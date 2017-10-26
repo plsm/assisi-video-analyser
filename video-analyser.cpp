@@ -59,6 +59,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	ui.y2SpinBox->setValue (experiment.background.size ().height);
 	ui.currentFrameSpinBox->setMinimum (1);
 	ui.currentFrameSpinBox->setMaximum (experiment.parameters.number_frames);
+	QFont title_font ("sans", 10, QFont::Bold);
 	struct Graph_Info {
 		QString legend;
 		QPen pen;
@@ -89,6 +90,8 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		textTicker->addTick (255, "255\nwhite");
 		axis->setTicker (textTicker);
 	};
+	ui.histogramView->plotLayout ()->insertRow (0);
+	ui.histogramView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.histogramView, "Histograms of colour intensity", title_font));
 	ui.histogramView->legend->setVisible (true);
 	set_colour_axis (ui.histogramView->xAxis);
 	ui.histogramView->xAxis->setLabel ("intensity level");
@@ -105,7 +108,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	for (Graph_Info_2 gi : feature_info) {
 		for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 			QCPGraph *graph = this->ui.plotNumberBeesView->addGraph ();
-			graph->setName (QString (("number bees in ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
+			graph->setName (QString (("ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
 			graph->setPen (QPen (QColor (
 			                             255 * i / (experiment.parameters.number_ROIs - 1),
 			                             255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
@@ -113,7 +116,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 			                             192),
 			                     1, gi.pen_style));
 			graph = this->ui.plotBeeSpeedView->addGraph ();
-			graph->setName (QString (("bee speed in ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
+			graph->setName (QString (("ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
 			graph->setPen (QPen (QColor (
 			                             255 * i / (experiment.parameters.number_ROIs - 1),
 			                             255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
@@ -122,12 +125,16 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 			                     1, gi.pen_style));
 		}
 	}
+	ui.plotBeeSpeedView->plotLayout ()->insertRow (0);
+	ui.plotBeeSpeedView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.plotBeeSpeedView, "Bee speed", title_font));
 	this->ui.plotBeeSpeedView->legend->setVisible (true);
 	set_xaxis (this->ui.plotBeeSpeedView->xAxis);
 	this->ui.plotBeeSpeedView->yAxis->setRange (0, 2000);
 	this->ui.plotBeeSpeedView->yAxis->setLabel ("number pixels");
 	this->ui.plotNumberBeesView->legend->setVisible (true);
 	set_xaxis (this->ui.plotNumberBeesView->xAxis);
+	ui.plotNumberBeesView->plotLayout ()->insertRow (0);
+	ui.plotNumberBeesView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.plotNumberBeesView, "Number bees", title_font));
 	this->ui.plotNumberBeesView->yAxis->setRange (0, 3500);
 	this->ui.plotNumberBeesView->yAxis->setLabel ("number pixels");
 	Graph_Info plot_graph_info[] = {
