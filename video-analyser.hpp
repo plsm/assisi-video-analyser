@@ -2,6 +2,7 @@
 #define __VIDEO_ANALYSER__
 
 #include <QtCore/qglobal.h>
+#include <QGraphicsRectItem>
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QMainWindow>
@@ -38,8 +39,9 @@ public slots:
 	void rectangular_area_changed (int);
 private:
 	Animate animate;
-	QGraphicsItem *imageItem;
 	QGraphicsScene *scene;
+	QGraphicsPixmapItem *pixmap;
+	QGraphicsRectItem *roi;
 	std::vector<QCPItemLine *> current_frame_line;
 	QCPItemLine *intensity_analyse_line;
 	QCPItemRect *intensity_span_rect;

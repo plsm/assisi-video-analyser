@@ -17,12 +17,15 @@ static QImage Mat2QImage (const cv::Mat &image, const cv::Mat &mask);
 VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	experiment (experiment),
 	animate (experiment.parameters, &ui),
-	imageItem (NULL),
 	scene (new QGraphicsScene ()),
+	pixmap (new QGraphicsPixmapItem (NULL, scene)),
+	roi (new QGraphicsRectItem (0, 0, experiment.parameters.frame_size.width, experiment.parameters.frame_size.height, NULL, scene)),
 	current_frame_line (3)
 {
 	ui.setupUi (this);
+	// initialise the widget where an image is show
 	this->ui.frameView->setScene (this->scene);
+	roi->setFlag (QGraphicsItem::ItemIsMovable);
 	// initialise the line representing the current frame in the plots
 	QCustomPlot *owners[] = {this->ui.plotColourView, this->ui.plotBeeSpeedView, this->ui.plotNumberBeesView};
 	for (int i = 0; i < 3; i++) {
@@ -320,10 +323,15 @@ void VideoAnalyser::update_displayed_histograms ()
 
 void VideoAnalyser::rectangular_area_changed (int)
 {
-	ui.x1SpinBox->setMaximum (ui.x2SpinBox->value () - 1);
-	ui.x2SpinBox->setMinimum (ui.x1SpinBox->value () + 1);
-	ui.y1SpinBox->setMaximum (ui.y2SpinBox->value () - 1);
-	ui.y2SpinBox->setMinimum (ui.y1SpinBox->value () + 1);
+	int x1 = ui.x1SpinBox->value ();
+	int y1 = ui.y1SpinBox->value ();
+	int x2 = ui.x2SpinBox->value ();
+	int y2 = ui.y2SpinBox->value ();
+	ui.x1SpinBox->setMaximum (x2 - 1);
+	ui.x2SpinBox->setMinimum (x1 + 1);
+	ui.y1SpinBox->setMaximum (y2 - 1);
+	ui.y2SpinBox->setMinimum (y1 + 1);
+	this->roi->setRect (x1, y1, x2 - x1, y2 - y1);
 	if (ui.cropToRectCheckBox->isChecked ())
 		this->update_image (ui.currentFrameSpinBox->value ());
 }
@@ -380,10 +388,7 @@ void VideoAnalyser::update_image (int current_frame)
 	else {
 		mask = cv::Mat::ones (image.size ().height, image.size ().width, CV_8UC1);
 	}
-	if (this->imageItem != NULL) {
-		this->scene->removeItem (this->imageItem);
-	}
-	this->imageItem = this->scene->addPixmap (QPixmap::fromImage (Mat2QImage (image, mask)));
+	this->pixmap->setPixmap (QPixmap::fromImage (Mat2QImage (image, mask)));
 	this->ui.frameView->update ();
 }
 
