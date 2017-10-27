@@ -12,7 +12,7 @@ static void read_pixel_count_difference (const RunParameters &parameters, const 
 
 Histogram *compute_histogram_background (const RunParameters &parameters)
 {
-	fprintf (stderr, "Computing histogram of background image\n");
+	fprintf (stderr, "Computing histogram of background image...\n");
 	Histogram *result = new Histogram ();
 	string filename = parameters.histogram_background_filename ();
 	if (access (filename.c_str (), R_OK) == 0) {
@@ -34,7 +34,7 @@ Histogram *compute_histogram_background (const RunParameters &parameters)
 
 map<int, Histogram> *compute_histogram_frames_all (const RunParameters &parameters)
 {
-	fprintf (stderr, "Computing histogram of entire video frames\n");
+	fprintf (stderr, "Computing histogram of entire video frames...\n");
 	map<int, Histogram> *result;
 	string filename = parameters.histogram_frames_all_filename ();
 	if (access (filename.c_str (), F_OK) == 0) {
@@ -69,11 +69,7 @@ map<int, Histogram> *compute_histogram_frames_all (const RunParameters &paramete
 
 map<int, Histogram> *compute_histogram_frames_rect (const UserParameters &parameters)
 {
-	fprintf (stderr, "Computing histogram of rectangle (%d,%d)-(%d,%d) in all video frames\n",
-	         parameters.x1,
-	         parameters.y1,
-	         parameters.x2,
-	         parameters.y2);
+	fprintf (stderr, "Computing histogram in rectangle %s of all video frames...\n", parameters.rectangle_user ().c_str ());
 	map<int, Histogram> *result;
 	string filename = parameters.histogram_frames_rect ();
 	if (access (filename.c_str (), F_OK) == 0) {
@@ -178,7 +174,7 @@ cv::Mat light_calibration (const Experiment &experiment, unsigned int index_fram
 
 vector<QVector<double> > *compute_pixel_count_difference_raw (const RunParameters &parameters)
 {
-	fprintf (stderr, "Computing pixel count difference raw between background images and current frame and between current frame and %d frame afar\n", parameters.delta_frame);
+	fprintf (stderr, "Computing pixel count difference on raw frames. The difference is between background image and current frame and between %d frames afar.\n", parameters.delta_frame);
 	vector<QVector<double> > *result = new vector<QVector<double> > (2 * parameters.number_ROIs);
 	string data_filename = parameters.features_pixel_count_difference_raw_filename ();
 	if (access (data_filename.c_str (), F_OK) == 0) {
@@ -208,8 +204,10 @@ vector<QVector<double> > *compute_pixel_count_difference_raw (const RunParameter
 		cv::Mat masks [parameters.number_ROIs];
 		for (unsigned int index_mask = 0; index_mask < parameters.number_ROIs; index_mask++) {
 			masks [index_mask] = cv::imread (parameters.mask_filename (index_mask), CV_LOAD_IMAGE_GRAYSCALE);
+#ifdef DEBUG
 			print_image (masks [index_mask], "mask");
 			cv::waitKey (0);
+#endif
 		}
 		for (unsigned int index_frame = 1; index_frame <= parameters.number_frames; index_frame++) {
 			string frame_filename = parameters.frame_filename (index_frame);
@@ -258,7 +256,7 @@ vector<QVector<double> > *compute_pixel_count_difference_raw (const RunParameter
 
 vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization (const Experiment &experiment)
 {
-	fprintf (stderr, "Computing pixel count difference on images that have gone through histogram equalization between background images and current frame and between current frame and %d frame afar\n", experiment.parameters.delta_frame);
+	fprintf (stderr, "Computing pixel count difference on frames that have gone through histogram equalization between background images and current frame and between %d frames afar.\n", experiment.parameters.delta_frame);
 	vector<QVector<double> > *result = new vector<QVector<double> > (2 * experiment.parameters.number_ROIs);
 	string data_filename = experiment.parameters.features_pixel_count_difference_histogram_equalization_filename ();
 	if (access (data_filename.c_str (), F_OK) == 0) {
@@ -331,7 +329,7 @@ vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization 
 
 vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour (const Experiment &experiment)
 {
-	fprintf (stderr, "Computing pixel count difference on images that have gone through histogram equalization between background images and current frame and between current frame and %d frame afar\n", experiment.parameters.delta_frame);
+	fprintf (stderr, "Computing pixel count difference on frames that have been light calibrated using the most common colour in rectangle %s.  The difference is between background image and current frame and between %d frames afar.\n", experiment.parameters.rectangle_user ().c_str (), experiment.parameters.delta_frame);
 	vector<QVector<double> > *result = new vector<QVector<double> > (2 * experiment.parameters.number_ROIs);
 	string data_filename = experiment.parameters.features_pixel_count_difference_light_calibrated_most_common_colour_filename ();
 	if (access (data_filename.c_str (), F_OK) == 0) {
@@ -358,7 +356,7 @@ vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_c
 
 QVector<double> *compute_highest_colour_level_frames_rect (const UserParameters &parameters)
 {
-	fprintf (stderr, "Computing the colour level with highest count in the histogram of a rectangular are in frames\n");
+	fprintf (stderr, "Computing the most common colour in rectangle %s of raw frames...\n", parameters.rectangle_user ().c_str ());
 	QVector<double> *result = new QVector<double> ();
 	string filename = parameters.highest_colour_level_frames_rect_filename ();
 	if (access (filename.c_str (), F_OK) == 0) {

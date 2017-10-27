@@ -193,6 +193,16 @@ public:
 		       rectangle () +
 		       ".csv";
 	}
+	/**
+	 * @brief rectangle_user return a string representing the rectangle to be analysed in a human readable way.
+	 * @return a string representing the rectangle to be analysed in a human readable way.
+	 */
+	std::string rectangle_user () const
+	{
+		return
+		    "(" + std::to_string (this->x1) + "," + std::to_string (this->y1) + ")-(" +
+		    std::to_string (this->x2) + "," + std::to_string (this->y2) + ")";
+	}
 };
 
 typedef UserParameters Parameters;
