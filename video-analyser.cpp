@@ -18,12 +18,23 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	experiment (experiment),
 	animate (experiment.parameters, &ui),
 	scene (new QGraphicsScene ()),
-	pixmap (new QGraphicsPixmapItem (NULL, scene)),
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+   pixmap (new QGraphicsPixmapItem (NULL, scene)),
 	roi (new QGraphicsRectItem (0, 0, experiment.parameters.frame_size.width, experiment.parameters.frame_size.height, NULL, scene)),
-	current_frame_line (3)
+#else
+   pixmap (new QGraphicsPixmapItem (NULL)),
+   roi (new QGraphicsRectItem (0, 0, experiment.parameters.frame_size.width, experiment.parameters.frame_size.height, NULL)),
+#endif
+   current_frame_line (3),
+   most_common_colour_histogram_no_cropping (2),
+   most_common_colour_histogram_cropped_rectangle (2)
 {
 	ui.setupUi (this);
 	// initialise the widget where an image is show
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+	scene->addItem (pixmap);
+	scene->addItem (roi);
+#endif
 	this->ui.frameView->setScene (this->scene);
 	roi->setFlag (QGraphicsItem::ItemIsMovable);
 	// initialise the line representing the current frame in the plots
@@ -141,12 +152,14 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	this->ui.plotNumberBeesView->yAxis->setRange (0, 3500);
 	this->ui.plotNumberBeesView->yAxis->setLabel ("number pixels");
 	Graph_Info plot_graph_info[] = {
-		{.legend = "most common intensity - cropped rectangle"   , .pen = QPen (Qt::red  , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
+	   {.legend = "most common intensity - background - no cropping"       , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+	   {.legend = "most common intensity - frames - cropped rectangle"     , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
+	   {.legend = "most common intensity - background - cropped rectangle" , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
 	};
-	for (int i = 0; i < 1; i++) {
+	for (Graph_Info pgi : plot_graph_info) {
 		QCPGraph *graph = this->ui.plotColourView->addGraph ();
-		graph->setName (plot_graph_info [i].legend);
-		graph->setPen (plot_graph_info [i].pen);
+		graph->setName (pgi.legend);
+		graph->setPen (pgi.pen);
 	}
 	this->ui.plotColourView->legend->setVisible (true);
 	this->ui.plotColourView->xAxis->setRange (0, experiment.parameters.number_frames);
@@ -166,6 +179,9 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		this->ui.plotBeeSpeedView->graph (i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_raw) [i * 2 + 1]);
 		this->ui.plotNumberBeesView->graph (i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_raw) [i * 2]);
 	}
+	most_common_colour_histogram_no_cropping [0] =
+	most_common_colour_histogram_no_cropping [1] = experiment.histogram_background_raw->most_common_colour ();
+	this->ui.plotColourView->graph (0)->setData (experiment.X_FIRST_LAST_FRAMES, most_common_colour_histogram_no_cropping);
 	// setup connection between signals and slots
 	QObject::connect (ui.specialOperationRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.showDiffPreviousRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
@@ -275,7 +291,11 @@ void VideoAnalyser::update_rect_data ()
 	this->ui.histogramView->replot ();
 	delete this->experiment.highest_colour_level_frames_rect;
 	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters);
-	this->ui.plotColourView->graph (0)->setData (this->experiment.X_FRAMES, *this->experiment.highest_colour_level_frames_rect);
+	this->ui.plotColourView->graph (1)->setData (this->experiment.X_FRAMES, *this->experiment.highest_colour_level_frames_rect);
+	most_common_colour_histogram_cropped_rectangle [0] =
+	      most_common_colour_histogram_cropped_rectangle [1] =
+	      histogram.most_common_colour ();
+	this->ui.plotColourView->graph (2)->setData (experiment.X_FIRST_LAST_FRAMES, most_common_colour_histogram_cropped_rectangle);
 	this->ui.plotColourView->replot ();
 	delete this->experiment.pixel_count_difference_light_calibrated_most_common_colour;
 	this->experiment.pixel_count_difference_light_calibrated_most_common_colour = compute_pixel_count_difference_light_calibrated_most_common_colour (this->experiment);

@@ -54,6 +54,8 @@ public:
 
 	QVector<double> X_FRAMES;
 
+	QVector<double> X_FIRST_LAST_FRAMES;
+
 	Experiment (UserParameters &parameters);
 	virtual ~Experiment ();
 };

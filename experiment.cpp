@@ -12,7 +12,8 @@ Experiment::Experiment (UserParameters &parameters):
 	pixel_count_difference_raw (compute_pixel_count_difference_raw (parameters)),
    pixel_count_difference_light_calibrated_most_common_colour (NULL),
 	highest_colour_level_frames_rect (NULL),
-	X_FRAMES (parameters.number_frames)
+   X_FRAMES (parameters.number_frames),
+   X_FIRST_LAST_FRAMES (2)
 {
 	fprintf (stderr, "Initialising experiment data\n");
 	fprintf (stderr, "  reading experiment background\n");
@@ -24,6 +25,8 @@ Experiment::Experiment (UserParameters &parameters):
 	for (unsigned int i = 1; i <= parameters.number_frames; i++) {
 		X_FRAMES [i - 1] = i;
 	}
+	X_FIRST_LAST_FRAMES [0] = 1;
+	X_FIRST_LAST_FRAMES [1] = parameters.number_frames;
 }
 
 Experiment::~Experiment ()

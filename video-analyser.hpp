@@ -45,6 +45,8 @@ private:
 	std::vector<QCPItemLine *> current_frame_line;
 	QCPItemLine *intensity_analyse_line;
 	QCPItemRect *intensity_span_rect;
+	QVector<double> most_common_colour_histogram_no_cropping;
+	QVector<double> most_common_colour_histogram_cropped_rectangle;
 	void update_image (int current_frame);
 	void update_histogram_data (int current_frame);
 	void update_histogram_item (int intensity_analyse, int same_intensity_level);
