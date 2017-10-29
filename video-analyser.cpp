@@ -30,6 +30,10 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
    most_common_colour_histogram_cropped_rectangle (2)
 {
 	ui.setupUi (this);
+	// default colours to use in plots to distinguish different ROIs
+	this->mask_colour.push_back (QColor ( 31, 119, 180, 192));
+	this->mask_colour.push_back (QColor (255, 127,  14, 192));
+	this->mask_colour.push_back (QColor ( 44, 160,  44, 192));
 	// initialise the widget where an image is show
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 	scene->addItem (pixmap);
@@ -73,6 +77,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	ui.y2SpinBox->setValue (experiment.background.size ().height);
 	ui.currentFrameSpinBox->setMinimum (1);
 	ui.currentFrameSpinBox->setMaximum (experiment.parameters.number_frames);
+	QCPGraph *graph;
 	QFont title_font ("sans", 10, QFont::Bold);
 	struct Graph_Info {
 		QString legend;
@@ -86,7 +91,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		{.legend = "current frame light calibrated"    , .pen = QPen (QColor (127, 127, 0)  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
 	for (int i = 0; i < 5; i++) {
-		QCPGraph *graph = ui.histogramView->addGraph ();
+		graph = ui.histogramView->addGraph ();
 		graph->setName (graph_info [i].legend);
 		graph->setPen (graph_info [i].pen);
 	}
@@ -121,22 +126,19 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	};
 	for (Graph_Info_2 gi : feature_info) {
 		for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
-			QCPGraph *graph = this->ui.plotNumberBeesView->addGraph ();
+			QColor color = experiment.parameters.number_ROIs <= this->mask_colour.size () ?
+			         this->mask_colour [i] :
+			         QColor (
+			            255 * i / (experiment.parameters.number_ROIs - 1),
+			            255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
+			            128,
+			            192);
+			graph = this->ui.plotNumberBeesView->addGraph ();
 			graph->setName (QString (("ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
-			graph->setPen (QPen (QColor (
-			                             255 * i / (experiment.parameters.number_ROIs - 1),
-			                             255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
-			                             128,
-			                             192),
-			                     1, gi.pen_style));
+			graph->setPen (QPen (color, 1, gi.pen_style));
 			graph = this->ui.plotBeeSpeedView->addGraph ();
 			graph->setName (QString (("ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
-			graph->setPen (QPen (QColor (
-			                             255 * i / (experiment.parameters.number_ROIs - 1),
-			                             255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
-			                             128,
-			                             192),
-			                     1, gi.pen_style));
+			graph->setPen (QPen (color, 1, gi.pen_style));
 		}
 	}
 	ui.plotBeeSpeedView->plotLayout ()->insertRow (0);
@@ -157,7 +159,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	   {.legend = "most common intensity - background - cropped rectangle" , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
 	};
 	for (Graph_Info pgi : plot_graph_info) {
-		QCPGraph *graph = this->ui.plotColourView->addGraph ();
+		graph = this->ui.plotColourView->addGraph ();
 		graph->setName (pgi.legend);
 		graph->setPen (pgi.pen);
 	}
