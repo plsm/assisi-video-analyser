@@ -9,15 +9,14 @@
 using namespace std;
 
 
-RunParameters::RunParameters ():
-	// folder ("/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_770-amp_40-pause_420/run-files_frequency=770Hz_amplitude=40_vibration-period=580ms_pause-period=420ms_R#2/"),
-	folder ("/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_770-amp_40-pause_420/run-files_frequency=770Hz_amplitude=40_vibration-period=580ms_pause-period=420ms_R#12/"),
-	frame_file_type ("jpg"),
-	number_ROIs (3),
-	delta_frame (2),
-	same_colour_threshold (15),
-	number_frames (compute_number_frames ()),
-	same_colour_level ((NUMBER_COLOUR_LEVELS * same_colour_threshold) / 100)
+UserParameters::UserParameters ():
+   RunParameters (
+      "/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_570-amp_25-pause_240/dataset_frequency=570Hz_amplitude=25_vibration-period=760ms_pause-period=240ms_#6",
+      "png",
+      3,
+      2,
+      15
+      )
 {
 }
 

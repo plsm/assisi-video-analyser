@@ -21,7 +21,6 @@ public:
 	const unsigned int number_frames;
 	const unsigned int same_colour_level;
 	const cv::Size frame_size;
-	RunParameters ();
 	RunParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
 	std::string background_filename () const
 	{
@@ -143,6 +142,26 @@ public:
 		}
 		fprintf (stderr, "\n");
 	}
+	template<typename A, typename B, typename C, typename D> void fold4_frames_F (void (*func) (const std::string &, A, B, C, D), A acc1, B acc2, C acc3, D acc4) const
+	{
+		for (unsigned int index_frame = 1; index_frame <= this->number_frames; index_frame++) {
+			std::string frame_filename = this->frame_filename (index_frame);
+			func (frame_filename, acc1, acc2, acc3, acc4);
+			fprintf (stderr, "\r    %d", index_frame);
+			fflush (stderr);
+		}
+		fprintf (stderr, "\n");
+	}
+	template<typename A, typename B, typename C, typename D, typename E> void fold5_frames_F (void (*func) (const std::string &, A, B, C, D, E), A acc1, B acc2, C acc3, D acc4, E acc5) const
+	{
+		for (unsigned int index_frame = 1; index_frame <= this->number_frames; index_frame++) {
+			std::string frame_filename = this->frame_filename (index_frame);
+			func (frame_filename, acc1, acc2, acc3, acc4, acc5);
+			fprintf (stderr, "\r    %d", index_frame);
+			fflush (stderr);
+		}
+		fprintf (stderr, "\n");
+	}
 };
 
 typedef enum {BACKGROUND_IMAGE, CURRENT_FRAME, DIFF_BACKGROUND_IMAGE, DIFF_PREVIOUS_IMAGE, SPECIAL_DATA, LIGHT_CALIBRATED} ImageData;
@@ -169,6 +188,7 @@ public:
 	int y1;
 	int x2;
 	int y2;
+	UserParameters ();
 	static UserParameters parse (int argc, char *argv[]);
 	std::string histogram_frames_rect () const
 	{

@@ -63,7 +63,7 @@ cv::Mat compute_threshold_mask_diff_background_diff_previous (const RunParameter
  */
 cv::Mat light_calibration (const Experiment &experiment, unsigned int index_frame);
 
-std::vector<QVector<double> > *compute_pixel_count_difference_raw (const RunParameters &parameters);
+std::vector<QVector<double> > *compute_pixel_count_difference_raw (const Experiment &experiment);
 
 std::vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization (const Experiment &experiment);
 

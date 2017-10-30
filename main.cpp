@@ -17,15 +17,31 @@
 
 using namespace std;
 
+Parameters get_parameters (int argc, char *argv[])
+{
+	UserParameters user_parameters = UserParameters::parse (argc, argv);
+	if (user_parameters.number_frames == 0) {
+		fprintf (stderr, "There are no video frames in folder %s\n", user_parameters.folder.c_str ());
+		fprintf (stderr, "Trying debug user parameters...\n");
+		UserParameters default_parameters;
+		if (default_parameters.number_frames == 0) {
+			fprintf (stderr, "There are no video frames in debug parameters!\n");
+			exit (EXIT_FAILURE);
+		}
+		else {
+			return default_parameters;
+		}
+	}
+	else {
+		return user_parameters;
+	}
+}
+
 int main (int argc, char **argv)
 {
 	init ();
+	UserParameters parameters = get_parameters (argc, argv);
 	QApplication a (argc, argv);
-	UserParameters parameters = UserParameters::parse (argc, argv);
-	if (parameters.number_frames == 0) {
-		fprintf (stderr, "There are no video frames in folder %s\n", parameters.folder.c_str ());
-		return 1;
-	}
 	Experiment experiment (parameters);
 	StadiumArena3CASUs arena (parameters);
 	VideoAnalyser video_analyser (experiment);
