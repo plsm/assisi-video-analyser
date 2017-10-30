@@ -40,7 +40,7 @@ void compute_pixel_count_difference (const Experiment &experiment, const cv::Mat
 	static Histogram histogram;
 	static cv::Mat number_bees, bee_speed, diff;
 	cv::absdiff (background, current_frame, number_bees);
-	bool enough_frames = cache->size () == experiment.parameters.delta_frame;
+	bool enough_frames = cache->size () > experiment.parameters.delta_frame;
 	if (enough_frames) {
 		cv::Mat previous_frame = cache->front ();
 		cache->pop ();
