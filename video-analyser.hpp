@@ -48,6 +48,7 @@ private:
 	QVector<double> most_common_colour_histogram_no_cropping;
 	QVector<double> most_common_colour_histogram_cropped_rectangle;
 	std::vector<QColor> mask_colour;
+	cv::Mat displayed_image;
 	void update_image (int current_frame);
 	void update_histogram_data (int current_frame);
 	void update_histogram_item (int intensity_analyse, int same_intensity_level);

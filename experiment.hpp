@@ -46,7 +46,8 @@ public:
 	 *
 	 * @see #highest_colour_level_frames_rect
 	 */
-	std::vector<QVector<double> > *pixel_count_difference_light_calibrated_most_common_colour;
+	std::vector<QVector<double> > *pixel_count_difference_light_calibrated_most_common_colour_method_PLSM;
+	std::vector<QVector<double> > *pixel_count_difference_light_calibrated_most_common_colour_method_LC;
 	/**
 	 * Cached highest colour level in frame histogram.
 	 */

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1044</width>
-    <height>872</height>
+    <height>952</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -45,9 +45,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-6</y>
          <width>288</width>
-         <height>892</height>
+         <height>946</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -115,7 +115,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>20</width>
-            <height>6</height>
+            <height>5</height>
            </size>
           </property>
          </spacer>
@@ -289,9 +289,16 @@
             </widget>
            </item>
            <item>
-            <widget class="QRadioButton" name="lightCalibratedRadioButton">
+            <widget class="QRadioButton" name="lightCalibratedPLSMMethodRadioButton">
              <property name="text">
-              <string>light calibrated</string>
+              <string>light calibrated (PLSM method)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="lightCalibratedLCMethodRadioButton">
+             <property name="text">
+              <string>light calibrated (LC method)</string>
              </property>
             </widget>
            </item>
@@ -332,19 +339,26 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
-            <widget class="QCheckBox" name="lightCalibratedPlotsCheckBox">
-             <property name="text">
-              <string>light calibrated</string>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QCheckBox" name="rawDataCheckBox">
              <property name="text">
               <string>raw data</string>
              </property>
              <property name="checked">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="showLightCalibratedPlotsPLSMMethodCheckBox">
+             <property name="text">
+              <string>light calibrated (PLSM method)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="showLightCalibratedPlotsLCMethodCheckBox">
+             <property name="text">
+              <string>light calibrated (LC method)</string>
              </property>
             </widget>
            </item>
@@ -478,6 +492,35 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>currentFrameSpinBox</tabstop>
+  <tabstop>playStopButton</tabstop>
+  <tabstop>framesPerSecondSpinBox</tabstop>
+  <tabstop>sameColourThresholdSpinBox</tabstop>
+  <tabstop>intensityAnalyseSpinBox</tabstop>
+  <tabstop>x1SpinBox</tabstop>
+  <tabstop>y1SpinBox</tabstop>
+  <tabstop>x2SpinBox</tabstop>
+  <tabstop>y2SpinBox</tabstop>
+  <tabstop>updateRectPushButton</tabstop>
+  <tabstop>showBackgroundImageRadioButton</tabstop>
+  <tabstop>showVideoFrameRadioButton</tabstop>
+  <tabstop>showDiffBackgroundRadioButton</tabstop>
+  <tabstop>showDiffPreviousRadioButton</tabstop>
+  <tabstop>specialOperationRadioButton</tabstop>
+  <tabstop>lightCalibratedPLSMMethodRadioButton</tabstop>
+  <tabstop>lightCalibratedLCMethodRadioButton</tabstop>
+  <tabstop>cropToRectCheckBox</tabstop>
+  <tabstop>filterToIntensityCheckBox</tabstop>
+  <tabstop>histogramEqualisationCheckBox</tabstop>
+  <tabstop>showLightCalibratedPlotsPLSMMethodCheckBox</tabstop>
+  <tabstop>histogramBackroundCheckBox</tabstop>
+  <tabstop>currentFrameCheckBox</tabstop>
+  <tabstop>lightCalibratedHistogramsCheckBox</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>frameView</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

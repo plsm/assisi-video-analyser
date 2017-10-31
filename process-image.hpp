@@ -75,7 +75,10 @@ std::vector<QVector<double> > *compute_pixel_count_difference_histogram_equaliza
  * This function assumes that the most common intensity in a rectangular area
  * has already been calculated.
  */
-std::vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour (const Experiment &experiment);
+std::vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (const Experiment &experiment);
+
+
+std::vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (const Experiment &experiment);
 
 /**
  * For each frame compute the colour level with the highest count in the

@@ -15,8 +15,9 @@ Experiment::Experiment (UserParameters &parameters):
 	histogram_frames_all_raw (compute_histogram_frames_all (parameters)),
 	histogram_frames_rect_raw (NULL),
    pixel_count_difference_raw (compute_pixel_count_difference_raw (*this)),
-   pixel_count_difference_light_calibrated_most_common_colour (NULL),
-	highest_colour_level_frames_rect (NULL),
+   pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (NULL),
+   pixel_count_difference_light_calibrated_most_common_colour_method_LC (NULL),
+   highest_colour_level_frames_rect (NULL),
    X_FRAMES (parameters.number_frames),
    X_FIRST_LAST_FRAMES (2)
 {
@@ -33,7 +34,8 @@ Experiment::~Experiment ()
 	delete histogram_frames_all_raw;
 	delete histogram_frames_rect_raw;
 	delete pixel_count_difference_raw;
-	delete pixel_count_difference_light_calibrated_most_common_colour;
+	delete pixel_count_difference_light_calibrated_most_common_colour_method_PLSM;
+	delete pixel_count_difference_light_calibrated_most_common_colour_method_LC;
 	delete highest_colour_level_frames_rect;
 }
 

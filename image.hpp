@@ -63,6 +63,23 @@ void compute_pixel_count_difference (const Experiment &experiment, const cv::Mat
 
 cv::Mat light_calibrate (const Experiment &experiment, unsigned int frame);
 
-void light_calibrate (cv::Mat &frame, unsigned int pb, unsigned int pf);
+/**
+ * @brief light_calibrate Apply the given method to light calibrate a frame
+ * based on the most common colour on a rectangular area of the background image
+ * and the current frame.
+ *
+ * @param experiment
+ * @param index_frame
+ * @param x1
+ * @param y1
+ * @param x2
+ * @param y2
+ * @return
+ */
+cv::Mat light_calibrate (const Experiment &experiment, unsigned int index_frame, int x1, int y1, int x2, int y2, void (*method) (cv::Mat &, unsigned int, unsigned int));
+
+void light_calibrate_method_PLSM (cv::Mat &frame, unsigned int pb, unsigned int pf);
+
+void light_calibrate_method_LC (cv::Mat &frame, unsigned int pb, unsigned int pf);
 
 #endif

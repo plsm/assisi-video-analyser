@@ -228,11 +228,15 @@ vector<QVector<double> > *compute_pixel_count_difference_histogram_equalization 
 	return result;
 }
 
-vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour (const Experiment &experiment)
+vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (const Experiment &experiment)
 {
-	fprintf (stderr, "Computing pixel count difference on frames that have been light calibrated using the most common colour in rectangle %s.  The difference is between background image and current frame and between %d frames afar.\n", experiment.parameters.rectangle_user ().c_str (), experiment.parameters.delta_frame);
+	fprintf (stderr,
+	         "Computing pixel count difference on frames that have been light calibrated using the most common colour in rectangle %s."
+	         "  The difference is between background image and current frame and between %d frames afar."
+	         "  Using PLSM method.\n",
+	         experiment.parameters.rectangle_user ().c_str (), experiment.parameters.delta_frame);
 	vector<QVector<double> > *result = new vector<QVector<double> > (2 * experiment.parameters.number_ROIs);
-	string data_filename = experiment.parameters.features_pixel_count_difference_light_calibrated_most_common_colour_filename ();
+	string data_filename = experiment.parameters.features_pixel_count_difference_light_calibrated_most_common_colour_filename_method_PLSM ();
 	if (access (data_filename.c_str (), F_OK) == 0) {
 		read_pixel_count_difference (experiment.parameters, data_filename, result);
 	}
@@ -244,7 +248,38 @@ vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_c
 			cv::Mat frame = read_image (filename);
 			unsigned char pb = _experiment->histogram_background_raw->most_common_colour ();
 			unsigned char pf = (*_experiment->highest_colour_level_frames_rect) [index_frame - 1];
-			light_calibrate (frame, pb, pf);
+			light_calibrate_method_PLSM (frame, pb, pf);
+			compute_pixel_count_difference (*_experiment, _experiment->background, frame, _file, _cache, _result);
+			fprintf (_file, "\n");
+		};
+		FILE *file = fopen (data_filename.c_str (), "w");
+		experiment.parameters.fold4_frames_IF (func, &experiment, file, &cache, result);
+		fclose (file);
+	}
+	return result;
+}
+
+vector<QVector<double> > *compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (const Experiment &experiment)
+{
+	fprintf (stderr,
+	         "Computing pixel count difference on frames that have been light calibrated using the most common colour in rectangle %s."
+	         "  The difference is between background image and current frame and between %d frames afar."
+	         "  Using LC method.\n",
+	         experiment.parameters.rectangle_user ().c_str (), experiment.parameters.delta_frame);
+	vector<QVector<double> > *result = new vector<QVector<double> > (2 * experiment.parameters.number_ROIs);
+	string data_filename = experiment.parameters.features_pixel_count_difference_light_calibrated_most_common_colour_filename_method_LC ();
+	if (access (data_filename.c_str (), F_OK) == 0) {
+		read_pixel_count_difference (experiment.parameters, data_filename, result);
+	}
+	else {
+		fprintf (stderr, "  processing video frames in folder %s\n", experiment.parameters.folder.c_str ());
+		queue<cv::Mat> cache;
+		typedef void (*fold4_func) (unsigned int, const string &, const Experiment *, FILE *, queue<cv::Mat> *, vector<QVector<double> > *);
+		fold4_func func = [] (unsigned int index_frame, const string &filename, const Experiment *_experiment, FILE *_file, queue<cv::Mat> *_cache, vector<QVector<double> > *_result) {
+			cv::Mat frame = read_image (filename);
+			unsigned char pb = _experiment->histogram_background_raw->most_common_colour ();
+			unsigned char pf = (*_experiment->highest_colour_level_frames_rect) [index_frame - 1];
+			light_calibrate_method_LC (frame, pb, pf);
 			compute_pixel_count_difference (*_experiment, _experiment->background, frame, _file, _cache, _result);
 			fprintf (_file, "\n");
 		};

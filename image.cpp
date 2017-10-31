@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "image.hpp"
@@ -73,20 +74,44 @@ void compute_pixel_count_difference (const Experiment &experiment, const cv::Mat
 cv::Mat light_calibrate (const Experiment &experiment, unsigned int index_frame)
 {
 	cv::Mat frame = read_frame (experiment.parameters, index_frame);
-	unsigned char pb = experiment.histogram_background_raw->most_common_colour ();
-	unsigned char pf = (*experiment.highest_colour_level_frames_rect) [index_frame - 1];
-	light_calibrate (frame, pb, pf);
+	unsigned int pb = experiment.histogram_background_raw->most_common_colour ();
+	unsigned int pf = (*experiment.highest_colour_level_frames_rect) [index_frame - 1];
+	light_calibrate_method_PLSM (frame, pb, pf);
 	return frame;
 }
 
-void light_calibrate (cv::Mat &frame, unsigned int pb, unsigned int pf)
+cv::Mat light_calibrate (const Experiment &experiment, unsigned int index_frame, int x1, int y1, int x2, int y2, void (*method) (cv::Mat &, unsigned int, unsigned int))
+{
+	static Histogram histogram;
+	compute_histogram (experiment.background, x1, y1, x2, y2, histogram);
+	unsigned char pb = histogram.most_common_colour ();
+	cv::Mat frame = read_frame (experiment.parameters, index_frame);
+	compute_histogram (frame, x1, y1, x2, y2, histogram);
+	unsigned char pf = histogram.most_common_colour ();
+	method (frame, pb, pf);
+	return frame;
+}
+
+
+void light_calibrate_method_PLSM (cv::Mat &frame, unsigned int pb, unsigned int pf)
 {
 	for(int i = 0; i < frame.rows; i++)
 		for(int j = 0; j < frame.cols; j++) {
 			unsigned char old_value = frame.at<unsigned char> (i, j);
 			if (old_value < pf)
-				frame.at<unsigned char> (i, j) = (old_value * pb) / pf;
+				frame.at<unsigned char> (i, j) = (unsigned int) ((float) (old_value * pb) / pf + 0.5);
 			else
-				frame.at<unsigned char> (i, j) = 255 - ((255 - old_value) * (255 - pb) / (255 - pf));
+				frame.at<unsigned char> (i, j) = (unsigned int) (255 - ((float) (255 - old_value) * (255 - pb) / (255 - pf) + 0.5));
+		}
+}
+
+void light_calibrate_method_LC (cv::Mat &frame, unsigned int pb, unsigned int pf)
+{
+	for(int i = 0; i < frame.rows; i++)
+		for(int j = 0; j < frame.cols; j++) {
+			unsigned char old_value = frame.at<unsigned char> (i, j);
+			frame.at<unsigned char> (i, j) = std::min (
+			         (unsigned int) ((float) (old_value * pb) / pf + 0.5),
+			         NUMBER_COLOUR_LEVELS);
 		}
 }

@@ -174,7 +174,16 @@ public:
 	}
 };
 
-typedef enum {BACKGROUND_IMAGE, CURRENT_FRAME, DIFF_BACKGROUND_IMAGE, DIFF_PREVIOUS_IMAGE, SPECIAL_DATA, LIGHT_CALIBRATED} ImageData;
+typedef enum {
+	BACKGROUND_IMAGE,
+	CURRENT_FRAME,
+	DIFF_BACKGROUND_IMAGE,
+	DIFF_PREVIOUS_IMAGE,
+	SPECIAL_DATA,
+	LIGHT_CALIBRATED_PLSM_METHOD,
+	LIGHT_CALIBRATED_LC_METHOD,
+	__NUMBER_IMAGE_DATA__
+} ImageData;
 
 /**
  * Parameters that the user can set and that affect image processing functions.
@@ -208,7 +217,7 @@ public:
 		       this->rectangle () +
 		       ".csv";
 	}
-	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename () const
+	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename_method_PLSM () const
 	{
 		return
 		      this->folder +
@@ -217,6 +226,19 @@ public:
 		      "_DF=" + std::to_string (this->delta_frame) +
 		      "_light-calibration-most-common-colour" +
 		      rectangle () +
+		      "_PLSM" +
+		      ".csv";
+	}
+	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename_method_LC () const
+	{
+		return
+		      this->folder +
+		      "features-pixel-count-difference"
+		      "_SCT=" + std::to_string (this->same_colour_threshold) +
+		      "_DF=" + std::to_string (this->delta_frame) +
+		      "_light-calibration-most-common-colour" +
+		      rectangle () +
+		      "_LC" +
 		      ".csv";
 	}
 	std::string highest_colour_level_frames_rect_filename () const
