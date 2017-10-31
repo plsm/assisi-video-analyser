@@ -66,6 +66,9 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	this->intensity_span_rect->setPen (QPen (QColor (127, 127, 127, 63), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 	this->intensity_span_rect->setBrush (QBrush (QColor (127, 127, 127, 63)));
 	// setup widgets
+	//   same colour threshold
+	this->ui.sameColourThresholdSpinBox->setValue (experiment.parameters.get_same_colour_threshold ());
+	//   rectangle to analyse
 	QSpinBox *horizontal_spinBoxes[] = {ui.x1SpinBox, ui.x2SpinBox};
 	QSpinBox *vertical_spinBoxes[] = {ui.y1SpinBox, ui.y2SpinBox};
 	for (int i = 0; i < 2; i++) {
@@ -224,6 +227,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.x2SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
 	QObject::connect (ui.y1SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
 	QObject::connect (ui.y2SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
+	QObject::connect (ui.updateSameColourThresholdDataPushButton, SIGNAL (clicked ()), this, SLOT (update_same_colour_data ()));
 	//
 	this->experiment.parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	this->update_data (this->ui.currentFrameSpinBox->value ());
@@ -321,6 +325,7 @@ void VideoAnalyser::update_rect_data ()
 	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM = compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (this->experiment);
 	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC =
 	      compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (this->experiment);
+	// update the QCustomPlots
 	std::vector<QVector<double> > *pixel_count_difference[] = {
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM,
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC,
@@ -333,6 +338,8 @@ void VideoAnalyser::update_rect_data ()
 		}
 		d += experiment.parameters.number_ROIs;
 	}
+	this->ui.plotBeeSpeedView->replot ();
+	this->ui.plotNumberBeesView->replot ();
 }
 
 void VideoAnalyser::filter_to_intensity ()
@@ -392,6 +399,38 @@ void VideoAnalyser::rectangular_area_changed (int)
 	if (ui.cropToRectCheckBox->isChecked ())
 		this->update_image (ui.currentFrameSpinBox->value ());
 }
+
+void VideoAnalyser::update_same_colour_data ()
+{
+
+	printf ("SCT=%d\n", this->ui.sameColourThresholdSpinBox->value ());
+	this->experiment.parameters.set_same_colour_threshold (this->ui.sameColourThresholdSpinBox->value ());
+	this->experiment.pixel_count_difference_raw = compute_pixel_count_difference_raw (this->experiment);
+	if (this->experiment.highest_colour_level_frames_rect != NULL) {
+		this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM =
+		      compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (this->experiment);
+		this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC =
+		      compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (this->experiment);
+	}
+	// update the QCustomPlots
+	std::vector<QVector<double> > *pixel_count_difference[] = {
+	   experiment.pixel_count_difference_raw,
+	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM,
+	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC,
+	};
+	int d = 0;
+	for (std::vector<QVector<double> > *pcd : pixel_count_difference) {
+		if (pcd != NULL)
+			for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
+				this->ui.plotBeeSpeedView->graph (d + i)->setData (experiment.X_FRAMES, (*pcd) [i * 2 + 1]);
+				this->ui.plotNumberBeesView->graph (d + i)->setData (experiment.X_FRAMES, (*pcd) [i * 2]);
+			}
+		d += experiment.parameters.number_ROIs;
+	}
+	this->ui.plotBeeSpeedView->replot ();
+	this->ui.plotNumberBeesView->replot ();
+}
+
 
 // VideoAnalyser PRIVATE METHODS
 

@@ -23,6 +23,6 @@ cv::Mat modulo_difference (const cv::Mat &a, const cv::Mat &b);
  * represents pixels with the same colour, while white represents pixels with
  * the maximum colour difference.
  */
-int number_different_pixels (const RunParameters &parameters, const QVector<double> &histogram);
+int number_different_pixels (const UserParameters &parameters, const QVector<double> &histogram);
 
 #endif

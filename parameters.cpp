@@ -15,20 +15,17 @@ UserParameters::UserParameters ():
       "/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_570-amp_25-pause_240/dataset_frequency=570Hz_amplitude=25_vibration-period=760ms_pause-period=240ms_#6/",
       "png",
       3,
-      2,
-      15
+      2
       )
 {
 }
 
-RunParameters::RunParameters (const string &folder, const string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold):
+RunParameters::RunParameters (const string &folder, const string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame):
    folder (folder + verify_slash_at_end (folder)),
 	frame_file_type (frame_file_type),
 	number_ROIs (number_ROIs),
 	delta_frame (delta_frame),
-	same_colour_threshold (same_colour_threshold),
 	number_frames (compute_number_frames ()),
-	same_colour_level ((NUMBER_COLOUR_LEVELS * same_colour_threshold) / 100),
 	frame_size (compute_frame_size ())
 {
 }
@@ -100,7 +97,9 @@ cv::Size RunParameters::compute_frame_size () const
 }
 
 UserParameters::UserParameters (const string &folder, const string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold):
-   RunParameters (folder, frame_file_type, number_ROIs, delta_frame, same_colour_threshold),
+   RunParameters (folder, frame_file_type, number_ROIs, delta_frame),
+   same_colour_threshold (same_colour_threshold),
+   same_colour_level (round ((NUMBER_COLOUR_LEVELS * same_colour_threshold) / 100.0)),
    equalize_histograms (false),
    image_data (CURRENT_FRAME),
    x1 (numeric_limits<int>::max ()),
@@ -108,6 +107,22 @@ UserParameters::UserParameters (const string &folder, const string &frame_file_t
    x2 (numeric_limits<int>::min ()),
    y2 (numeric_limits<int>::min ())
 {
+}
+
+unsigned int UserParameters::get_same_colour_level () const
+{
+	return same_colour_level;
+}
+
+unsigned int UserParameters::get_same_colour_threshold () const
+{
+	return same_colour_threshold;
+}
+
+void UserParameters::set_same_colour_threshold (unsigned int value)
+{
+	same_colour_threshold = value;
+	same_colour_level = round ((NUMBER_COLOUR_LEVELS * same_colour_threshold) / 100.0);
 }
 
 static string verify_slash_at_end (const string &folder)

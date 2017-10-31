@@ -54,10 +54,10 @@ cv::Mat modulo_difference (const cv::Mat &a, const cv::Mat &b)
 	return result;
 }
 
-int number_different_pixels (const RunParameters &parameters, const QVector<double> &histogram)
+int number_different_pixels (const UserParameters &parameters, const QVector<double> &histogram)
 {
 	int result = 0;
-	for (unsigned int i = parameters.same_colour_level; i < NUMBER_COLOUR_LEVELS; i++)
+	for (unsigned int i = parameters.get_same_colour_level (); i < NUMBER_COLOUR_LEVELS; i++)
 		result += histogram [i];
 	return result;
 }

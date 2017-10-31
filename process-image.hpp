@@ -44,7 +44,7 @@ cv::Mat compute_difference_previous_image (const UserParameters &parameters, int
  * the difference the background image and the given video frame, and the
  * difference between the given video frame and a frame afar.
  */
-cv::Mat compute_threshold_mask_diff_background_diff_previous (const RunParameters &parameters, int index_frame);
+cv::Mat compute_threshold_mask_diff_background_diff_previous (const UserParameters &parameters, int index_frame);
 
 /**
  * Perform light calibration on the given frame using the most common colour

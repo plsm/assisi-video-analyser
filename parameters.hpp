@@ -17,11 +17,9 @@ public:
 	const std::string frame_file_type;
 	const unsigned int number_ROIs;
 	const unsigned int delta_frame;
-	const unsigned int same_colour_threshold;
 	const unsigned int number_frames;
-	const unsigned int same_colour_level;
 	const cv::Size frame_size;
-	RunParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
+	RunParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame);
 	std::string background_filename () const
 	{
 		return folder + "background." + frame_file_type;
@@ -47,24 +45,6 @@ public:
 	std::string histogram_frames_all_filename () const
 	{
 		return this->folder + "histogram-frames-all.csv";
-	}
-	std::string features_pixel_count_difference_raw_filename () const
-	{
-		return
-		      this->folder +
-		      "features-pixel-count-difference"
-		      "_SCT=" + std::to_string (this->same_colour_threshold) +
-		      "_DF=" + std::to_string (this->delta_frame) +
-		      "_raw.csv";
-	}
-	std::string features_pixel_count_difference_histogram_equalization_filename () const
-	{
-		return
-		      this->folder +
-		      "features-pixel-count-difference"
-		      "_SCT=" + std::to_string (this->same_colour_threshold) +
-		      "_DF=" + std::to_string (this->delta_frame) +
-		      "_histogram-equalization.csv";
 	}
 	void fold0_frames_IF (void (*func) (unsigned int, const std::string &)) const
 	{
@@ -198,6 +178,8 @@ class UserParameters: public RunParameters
 		      std::to_string (this->x2) + "x" + std::to_string (this->y2);
 	}
 	UserParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
+	unsigned int same_colour_threshold;
+	unsigned int same_colour_level;
 public:
 	bool equalize_histograms;
 	ImageData image_data;
@@ -210,6 +192,24 @@ public:
 	int y2;
 	UserParameters ();
 	static UserParameters parse (int argc, char *argv[]);
+	std::string features_pixel_count_difference_raw_filename () const
+	{
+		return
+		      this->folder +
+		      "features-pixel-count-difference"
+		      "_SCT=" + std::to_string (this->same_colour_threshold) +
+		      "_DF=" + std::to_string (this->delta_frame) +
+		      "_raw.csv";
+	}
+	std::string features_pixel_count_difference_histogram_equalization_filename () const
+	{
+		return
+		      this->folder +
+		      "features-pixel-count-difference"
+		      "_SCT=" + std::to_string (this->same_colour_threshold) +
+		      "_DF=" + std::to_string (this->delta_frame) +
+		      "_histogram-equalization.csv";
+	}
 	std::string histogram_frames_rect () const
 	{
 		return this->folder +
@@ -259,6 +259,9 @@ public:
 		    "(" + std::to_string (this->x1) + "," + std::to_string (this->y1) + ")-(" +
 		    std::to_string (this->x2) + "," + std::to_string (this->y2) + ")";
 	}
+	unsigned int get_same_colour_threshold () const;
+	void set_same_colour_threshold (unsigned int value);
+	unsigned int get_same_colour_level() const;
 };
 
 typedef UserParameters Parameters;

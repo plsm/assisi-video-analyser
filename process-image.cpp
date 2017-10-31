@@ -135,16 +135,16 @@ cv::Mat compute_difference_previous_image (const UserParameters &parameters, int
 		return diff;
 }
 
-cv::Mat compute_threshold_mask_diff_background_diff_previous (const RunParameters &parameters, int index_frame)
+cv::Mat compute_threshold_mask_diff_background_diff_previous (const UserParameters &parameters, int index_frame)
 {
 	cv::Mat background = read_background (parameters);
 	cv::Mat current_frame = read_frame (parameters, index_frame);
 	cv::Mat previous_frame = read_frame (parameters, index_frame - parameters.delta_frame);
 	cv::Mat diff1, diff2, mask1, mask2, result;
 	cv::absdiff (background, current_frame, diff1);
-	cv::threshold (diff1, mask1, parameters.same_colour_level, 255, cv::THRESH_BINARY);
+	cv::threshold (diff1, mask1, parameters.get_same_colour_level (), 255, cv::THRESH_BINARY);
 	cv::absdiff (previous_frame, current_frame, diff2);
-	cv::threshold (diff2, mask2, parameters.same_colour_level, 255, cv::THRESH_BINARY);
+	cv::threshold (diff2, mask2, parameters.get_same_colour_level (), 255, cv::THRESH_BINARY);
 	result = mask1 | mask2;
 	return result;
 }

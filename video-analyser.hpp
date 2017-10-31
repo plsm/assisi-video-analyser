@@ -37,6 +37,7 @@ public slots:
 	void update_displayed_pixel_count_difference_plots ();
 	void update_displayed_histograms ();
 	void rectangular_area_changed (int);
+	void update_same_colour_data ();
 private:
 	Animate animate;
 	QGraphicsScene *scene;
