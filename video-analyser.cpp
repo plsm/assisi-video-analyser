@@ -13,6 +13,7 @@
 using namespace std;
 
 static QImage Mat2QImage (const cv::Mat &image, const cv::Mat &mask);
+static double compute_max_range (const QVector<double> &data);
 
 VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	experiment (experiment),
@@ -77,6 +78,8 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	ui.y2SpinBox->setValue (experiment.background.size ().height);
 	ui.currentFrameSpinBox->setMinimum (1);
 	ui.currentFrameSpinBox->setMaximum (experiment.parameters.number_frames);
+	//    setup qcustom plot widgets
+	double maximum;
 	QCPGraph *graph;
 	QFont title_font ("sans", 10, QFont::Bold);
 	struct Graph_Info {
@@ -114,7 +117,10 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	ui.histogramView->legend->setVisible (true);
 	set_colour_axis (ui.histogramView->xAxis);
 	ui.histogramView->xAxis->setLabel ("intensity level");
-	ui.histogramView->yAxis->setRange (0, 50000);
+	maximum = compute_max_range (*experiment.histogram_background_raw);
+	for (pair<const int, Histogram> &h : *experiment.histogram_frames_all_raw)
+		maximum = std::max (maximum, compute_max_range (h.second));
+	ui.histogramView->yAxis->setRange (0, maximum);
 	ui.histogramView->yAxis->setLabel ("count");
 	struct Graph_Info_2 {
 		string label;
@@ -146,13 +152,19 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	ui.plotBeeSpeedView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.plotBeeSpeedView, "Bee speed", title_font));
 	this->ui.plotBeeSpeedView->legend->setVisible (true);
 	set_xaxis (this->ui.plotBeeSpeedView->xAxis);
-	this->ui.plotBeeSpeedView->yAxis->setRange (0, 2000);
+	maximum = 0;
+	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++)
+		maximum = std::max (maximum, compute_max_range ((*experiment.pixel_count_difference_raw) [2 * i + 1]));
+	this->ui.plotBeeSpeedView->yAxis->setRange (0, maximum);
 	this->ui.plotBeeSpeedView->yAxis->setLabel ("number pixels");
 	this->ui.plotNumberBeesView->legend->setVisible (true);
 	set_xaxis (this->ui.plotNumberBeesView->xAxis);
 	ui.plotNumberBeesView->plotLayout ()->insertRow (0);
 	ui.plotNumberBeesView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.plotNumberBeesView, "Number bees", title_font));
-	this->ui.plotNumberBeesView->yAxis->setRange (0, 3500);
+	maximum = 0;
+	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++)
+		maximum = std::max (maximum, compute_max_range ((*experiment.pixel_count_difference_raw) [2 * i]));
+	this->ui.plotNumberBeesView->yAxis->setRange (0, maximum);
 	this->ui.plotNumberBeesView->yAxis->setLabel ("number pixels");
 	Graph_Info plot_graph_info[] = {
 	   {.legend = "most common intensity - background - no cropping"       , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
@@ -514,4 +526,17 @@ QImage Mat2QImage (const cv::Mat &image, const cv::Mat &mask)
 		}
 	}
 	return dest;
+}
+
+double compute_max_range (const QVector<double> &data)
+{
+	double maximum = data [0];
+	for (double x : data)
+		maximum = max (x, maximum);
+	double power = ceil (log10 (maximum));
+	double result = pow (10, power);
+	double delta = pow (10, power - 1) / 2;
+	while (result - delta >= maximum)
+		result -= delta;
+	return result;
 }
