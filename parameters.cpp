@@ -11,7 +11,7 @@ using namespace std;
 
 UserParameters::UserParameters ():
    RunParameters (
-      "/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_570-amp_25-pause_240/dataset_frequency=570Hz_amplitude=25_vibration-period=760ms_pause-period=240ms_#6",
+      "/media/Adamastor/ASSISIbf/results/demo/pha-review/TOP-Freq_570-amp_25-pause_240/dataset_frequency=570Hz_amplitude=25_vibration-period=760ms_pause-period=240ms_#6/",
       "png",
       3,
       2,

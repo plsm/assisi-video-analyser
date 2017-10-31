@@ -24,11 +24,11 @@ public:
 	RunParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
 	std::string background_filename () const
 	{
-		return folder + "/background." + frame_file_type;
+		return folder + "background." + frame_file_type;
 	}
 	std::string frame_filename (int index_frame) const
 	{
-		std::string result = this->folder + "/frames-";
+		std::string result = this->folder + "frames-";
 		char number[5];
 		sprintf (number, "%04d", index_frame);
 		result += number;
@@ -38,23 +38,33 @@ public:
 	}
 	std::string mask_filename (int index_mask) const
 	{
-		return this->folder + "/Mask-" + std::to_string (index_mask) + ".jpg";
+		return this->folder + "Mask-" + std::to_string (index_mask) + ".jpg";
 	}
 	std::string histogram_background_filename () const
 	{
-		return this->folder + "/histogram-background.csv";
+		return this->folder + "histogram-background.csv";
 	}
 	std::string histogram_frames_all_filename () const
 	{
-		return this->folder + "/histogram-frames-all.csv";
+		return this->folder + "histogram-frames-all.csv";
 	}
 	std::string features_pixel_count_difference_raw_filename () const
 	{
-		return this->folder + "/features_pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-raw.csv";
+		return
+		      this->folder +
+		      "features-pixel-count-difference"
+		      "_SCT=" + std::to_string (this->same_colour_threshold) +
+		      "_DF=" + std::to_string (this->delta_frame) +
+		      "_raw.csv";
 	}
 	std::string features_pixel_count_difference_histogram_equalization_filename () const
 	{
-		return this->folder + "/features-pixel-count-difference-" + std::to_string (this->same_colour_threshold) + "-histogram-equalization.csv";
+		return
+		      this->folder +
+		      "features-pixel-count-difference"
+		      "_SCT=" + std::to_string (this->same_colour_threshold) +
+		      "_DF=" + std::to_string (this->delta_frame) +
+		      "_histogram-equalization.csv";
 	}
 	void fold0_frames_IF (void (*func) (unsigned int, const std::string &)) const
 	{
@@ -174,8 +184,9 @@ class UserParameters: public RunParameters
 	std::string rectangle () const
 	{
 		return
-		    std::to_string (this->x1) + "-" + std::to_string (this->y1) + "-" +
-		    std::to_string (this->x2) + "-" + std::to_string (this->y2);
+		      "_RECT=" +
+		      std::to_string (this->x1) + "x" + std::to_string (this->y1) + "-" +
+		      std::to_string (this->x2) + "x" + std::to_string (this->y2);
 	}
 	UserParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold);
 public:
@@ -193,25 +204,28 @@ public:
 	std::string histogram_frames_rect () const
 	{
 		return this->folder +
-		       "/histogram-frames-rect-" +
+		       "histogram-frames-rect-" +
 		       this->rectangle () +
 		       ".csv";
 	}
 	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename () const
 	{
-		return this->folder +
-		       "/features-pixel-count-difference-" +
-		       std::to_string (this->same_colour_threshold) +
-		       "-light-calibration-most-common-colour-" +
-		       rectangle () +
-		       ".csv";
+		return
+		      this->folder +
+		      "features-pixel-count-difference"
+		      "_SCT=" + std::to_string (this->same_colour_threshold) +
+		      "_DF=" + std::to_string (this->delta_frame) +
+		      "_light-calibration-most-common-colour" +
+		      rectangle () +
+		      ".csv";
 	}
 	std::string highest_colour_level_frames_rect_filename () const
 	{
-		return this->folder +
-		       "/highest-colour-level-frames-rect-" +
-		       rectangle () +
-		       ".csv";
+		return
+		      this->folder +
+		      "most-common-colour" +
+		      rectangle () +
+		      ".csv";
 	}
 	/**
 	 * @brief rectangle_user return a string representing the rectangle to be analysed in a human readable way.
