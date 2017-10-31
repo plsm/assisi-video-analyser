@@ -1,0 +1,9 @@
+# QT Creator configuration files
+assisi-video-analyser.pro.user*
+
+# QT Creator auto save files
+*.autosave
+
+# qcustom plot files
+qcustomplot.cpp
+qcustomplot.h
