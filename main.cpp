@@ -6,10 +6,6 @@
 #endif
 #include <opencv2/opencv.hpp>
 
-#include "animate.hpp"
-#include "image.hpp"
-#include "process-image.hpp"
-#include "ui_video-analyser.h"
 #include "arena.hpp"
 #include "experiment.hpp"
 #include "video-analyser.hpp"
