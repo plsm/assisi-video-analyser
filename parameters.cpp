@@ -8,6 +8,7 @@
 
 using namespace std;
 
+static string verify_slash_at_end (const string &folder);
 
 UserParameters::UserParameters ():
    RunParameters (
@@ -21,7 +22,7 @@ UserParameters::UserParameters ():
 }
 
 RunParameters::RunParameters (const string &folder, const string &frame_file_type, unsigned int number_ROIs, unsigned int delta_frame, unsigned int same_colour_threshold):
-	folder (folder),
+   folder (folder + verify_slash_at_end (folder)),
 	frame_file_type (frame_file_type),
 	number_ROIs (number_ROIs),
 	delta_frame (delta_frame),
@@ -107,4 +108,14 @@ UserParameters::UserParameters (const string &folder, const string &frame_file_t
    x2 (numeric_limits<int>::min ()),
    y2 (numeric_limits<int>::min ())
 {
+}
+
+static string verify_slash_at_end (const string &folder)
+{
+	if (folder.size () == 0)
+		return "";
+	else if (folder [folder.size () - 1] == '/')
+		return "";
+	else
+		return "/";
 }
