@@ -217,6 +217,26 @@ public:
 		       this->rectangle () +
 		       ".csv";
 	}
+	std::string histogram_frames_light_calibrated_most_common_colour_method_PLSM_filename () const
+	{
+		return
+		      this->folder +
+		      "histogram-frames"
+		      "_light-calibrated-most-common-colour" +
+		      this->rectangle () +
+		      "_PLSM"
+		      ".csv";
+	}
+	std::string histogram_frames_light_calibrated_most_common_colour_method_LC_filename () const
+	{
+		return
+		      this->folder +
+		      "histogram-frames"
+		      "_light-calibrated-most-common-colour" +
+		      this->rectangle () +
+		      "_LC"
+		      ".csv";
+	}
 	std::string features_pixel_count_difference_light_calibrated_most_common_colour_filename_method_PLSM () const
 	{
 		return

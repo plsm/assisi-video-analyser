@@ -27,6 +27,8 @@ public:
 	 * Caches the histogram of a rectangular area for all frames.
 	 */
 	std::map<int, Histogram> *histogram_frames_rect_raw;
+	std::map<int, Histogram> *histogram_frames_light_calibrated_most_common_colour_method_PLSM;
+	std::map<int, Histogram> *histogram_frames_light_calibrated_most_common_colour_method_LC;
 	/**
 	 * Cache with the pixel count difference raw between background image and
 	 * raw frame and between raw frames x seconds apart, for all regions of interest.
@@ -59,6 +61,8 @@ public:
 
 	Experiment (UserParameters &parameters);
 	virtual ~Experiment ();
+
+	void set_rect_data (int x1, int y1, int x2, int y2);
 };
 
 #endif

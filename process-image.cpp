@@ -94,6 +94,72 @@ map<int, Histogram> *compute_histogram_frames_rect (const UserParameters &parame
 	return result;
 }
 
+map<int, Histogram> *compute_histogram_frames_light_calibrated_most_common_colour_method_PLSM (const Experiment &experiment)
+{
+	fprintf (stderr,
+	         "Computing histogram of frames that were light calibrated using the PLSM method."
+	         "  Light calibration uses the most common colour in rectangle %s for each frame.\n",
+	         experiment.parameters.rectangle_user ().c_str ());
+	map<int, Histogram> *result;
+	string filename = experiment.parameters.histogram_frames_light_calibrated_most_common_colour_method_PLSM_filename ();
+	if (access (filename.c_str (), F_OK) == 0) {
+		result = read_histograms_frames (experiment.parameters, filename);
+	}
+	else {
+		Histogram histogram;
+		compute_histogram (experiment.background, histogram);
+		unsigned int pb = histogram.most_common_colour ();
+		result = new map<int, Histogram> ();
+		typedef void (*fold3_func) (unsigned int, const string &, unsigned int, FILE *, map<int, Histogram> *);
+		fold3_func func = [] (unsigned int index_frame, const string &filename, unsigned int pb, FILE *_file, map<int, Histogram> *_result) {
+			cv::Mat frame = read_image (filename);
+			compute_histogram (frame, (*_result) [index_frame]);
+			unsigned int pf = (*_result) [index_frame].most_common_colour ();
+			light_calibrate_method_PLSM (frame, pb, pf);
+			compute_histogram (frame, (*_result) [index_frame]);
+			(*_result) [index_frame].write (_file);
+			fprintf (_file, "\n");
+		};
+		FILE *file = fopen (filename.c_str (), "w");
+		experiment.parameters.fold3_frames_IF (func, pb, file, result);
+		fclose (file);
+	}
+	return result;
+}
+
+map<int, Histogram> *compute_histogram_frames_light_calibrated_most_common_colour_method_LC (const Experiment &experiment)
+{
+	fprintf (stderr,
+	         "Computing histogram of frames that were light calibrated using the LC method."
+	         "  Light calibration uses the most common colour in rectangle %s for each frame.\n",
+	         experiment.parameters.rectangle_user ().c_str ());
+	map<int, Histogram> *result;
+	string filename = experiment.parameters.histogram_frames_light_calibrated_most_common_colour_method_LC_filename ();
+	if (access (filename.c_str (), F_OK) == 0) {
+		result = read_histograms_frames (experiment.parameters, filename);
+	}
+	else {
+		Histogram histogram;
+		compute_histogram (experiment.background, histogram);
+		unsigned int pb = histogram.most_common_colour ();
+		result = new map<int, Histogram> ();
+		typedef void (*fold3_func) (unsigned int, const string &, unsigned int, FILE *, map<int, Histogram> *);
+		fold3_func func = [] (unsigned int index_frame, const string &filename, unsigned int pb, FILE *_file, map<int, Histogram> *_result) {
+			cv::Mat frame = read_image (filename);
+			compute_histogram (frame, (*_result) [index_frame]);
+			unsigned int pf = (*_result) [index_frame].most_common_colour ();
+			light_calibrate_method_LC (frame, pb, pf);
+			compute_histogram (frame, (*_result) [index_frame]);
+			(*_result) [index_frame].write (_file);
+			fprintf (_file, "\n");
+		};
+		FILE *file = fopen (filename.c_str (), "w");
+		experiment.parameters.fold3_frames_IF (func, pb, file, result);
+		fclose (file);
+	}
+	return result;
+}
+
 void delete_histograms (map<int, QVector<double> *> *histograms)
 {
 	if (histograms == NULL) return;

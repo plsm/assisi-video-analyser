@@ -36,6 +36,7 @@ public slots:
 	void update_filtered_intensity (int);
 	void update_displayed_pixel_count_difference_plots ();
 	void update_displayed_histograms ();
+	void update_displayed_histograms_all_frames ();
 	void rectangular_area_changed (int);
 	void update_same_colour_data ();
 private:

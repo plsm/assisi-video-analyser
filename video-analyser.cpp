@@ -53,12 +53,12 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		this->current_frame_line [i]->setPen (QPen (QColor (0, 0, 0, 127), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 	}
 	// initialise the line representing the intensity to analyse
-	this->intensity_analyse_line = new QCPItemLine (this->ui.histogramView);
+	this->intensity_analyse_line = new QCPItemLine (this->ui.histogramSelectedFramesView);
 	this->intensity_analyse_line->start->setTypeY (QCPItemPosition::ptAxisRectRatio);
 	this->intensity_analyse_line->start->setCoords (1, 0);
 	this->intensity_analyse_line->end->setCoords (1, 1);
 	this->intensity_analyse_line->setPen (QPen (QColor (0, 0, 0, 127), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-	this->intensity_span_rect = new QCPItemRect (this->ui.histogramView);
+	this->intensity_span_rect = new QCPItemRect (this->ui.histogramSelectedFramesView);
 	this->intensity_span_rect->topLeft->setTypeY (QCPItemPosition::ptAxisRectRatio);
 	this->intensity_span_rect->topLeft->setCoords (0, 1);
 	this->intensity_span_rect->bottomRight->setTypeY (QCPItemPosition::ptAxisRectRatio);
@@ -84,7 +84,12 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	//    setup qcustom plot widgets
 	double maximum;
 	QCPGraph *graph;
-	QFont title_font ("sans", 10, QFont::Bold);
+	QColor color;
+	auto add_title = [] (auto custom_plot, const char *title) {
+		QFont title_font ("sans", 10, QFont::Bold);
+		custom_plot->plotLayout ()->insertRow (0);
+		custom_plot->plotLayout ()->addElement (0, 0, new QCPTextElement (custom_plot, title, title_font));
+	};
 	struct Graph_Info {
 		QString legend;
 		QPen pen;
@@ -97,7 +102,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		{.legend = "current frame light calibrated"    , .pen = QPen (QColor (127, 127, 0)  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
 	for (int i = 0; i < 5; i++) {
-		graph = ui.histogramView->addGraph ();
+		graph = ui.histogramSelectedFramesView->addGraph ();
 		graph->setName (graph_info [i].legend);
 		graph->setPen (graph_info [i].pen);
 	}
@@ -115,16 +120,50 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		textTicker->addTick (255, "255\nwhite");
 		axis->setTicker (textTicker);
 	};
-	ui.histogramView->plotLayout ()->insertRow (0);
-	ui.histogramView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.histogramView, "Histograms of colour intensity", title_font));
-	ui.histogramView->legend->setVisible (true);
-	set_colour_axis (ui.histogramView->xAxis);
-	ui.histogramView->xAxis->setLabel ("intensity level");
+	add_title (ui.histogramSelectedFramesView, "Histograms of colour intensity");
+	ui.histogramSelectedFramesView->legend->setVisible (true);
+	set_colour_axis (ui.histogramSelectedFramesView->xAxis);
+	ui.histogramSelectedFramesView->xAxis->setLabel ("intensity level");
 	maximum = compute_max_range (*experiment.histogram_background_raw);
 	for (pair<const int, Histogram> &h : *experiment.histogram_frames_all_raw)
 		maximum = std::max (maximum, compute_max_range (h.second));
-	ui.histogramView->yAxis->setRange (0, maximum);
-	ui.histogramView->yAxis->setLabel ("count");
+	ui.histogramSelectedFramesView->yAxis->setRange (0, maximum);
+	ui.histogramSelectedFramesView->yAxis->setLabel ("count");
+	//     qcustom plot widget with histogram of all frames
+	const string labels[] = {
+	  "raw",
+	   "light calibrated most common colour (PLSM)",
+	   "light calibrated most common colour (LC)",
+	};
+	int d = 0;
+	for (const string &a_label : labels) {
+		for (unsigned int i = 0; i < experiment.parameters.number_frames; i++) {
+			ui.histogramAllFramesView->setAutoAddPlottableToLegend (i == 0 || i == experiment.parameters.number_frames - 1);
+			graph = ui.histogramAllFramesView->addGraph ();
+			color = QColor (
+			         255 * i / (experiment.parameters.number_frames - 1),
+			         i <= experiment.parameters.number_frames / 2 ? 255 * i / experiment.parameters.number_frames / 2 : 0,
+			         i > experiment.parameters.number_frames / 2 ? 255 * (i - experiment.parameters.number_frames / 2) / experiment.parameters.number_frames / 2 : 0,
+			         192);
+			color = QColor (
+			         d == 0 ? 255 * i / (experiment.parameters.number_frames - 1) : 63,
+			         d == 1 ? 255 * i / (experiment.parameters.number_frames - 1) : 63,
+			         d == 2 ? 255 * i / (experiment.parameters.number_frames - 1) : 63,
+			         192);
+			graph->setPen (QPen (color, 1, Qt::SolidLine));
+			if (i == 0)
+				graph->setName (("first frame " + a_label).c_str ());
+			else if (i == experiment.parameters.number_frames - 1)
+				graph->setName (("last frame " + a_label).c_str ());
+		}
+		d++;
+	}
+	add_title (ui.histogramAllFramesView, "Histograms of colour intensity");
+	ui.histogramAllFramesView->legend->setVisible (true);
+	set_colour_axis (ui.histogramAllFramesView->xAxis);
+	ui.histogramAllFramesView->xAxis->setLabel ("intensity level");
+	ui.histogramAllFramesView->yAxis->setRange (0, maximum);
+	ui.histogramAllFramesView->yAxis->setLabel ("count");
 	struct Graph_Info_2 {
 		string label;
 		Qt::PenStyle pen_style;
@@ -151,8 +190,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 			graph->setPen (QPen (color, 1, gi.pen_style));
 		}
 	}
-	ui.plotBeeSpeedView->plotLayout ()->insertRow (0);
-	ui.plotBeeSpeedView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.plotBeeSpeedView, "Bee speed", title_font));
+	add_title (ui.plotBeeSpeedView, "Bee speed");
 	this->ui.plotBeeSpeedView->legend->setVisible (true);
 	set_xaxis (this->ui.plotBeeSpeedView->xAxis);
 	maximum = 0;
@@ -162,8 +200,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	this->ui.plotBeeSpeedView->yAxis->setLabel ("number pixels");
 	this->ui.plotNumberBeesView->legend->setVisible (true);
 	set_xaxis (this->ui.plotNumberBeesView->xAxis);
-	ui.plotNumberBeesView->plotLayout ()->insertRow (0);
-	ui.plotNumberBeesView->plotLayout ()->addElement (0, 0, new QCPTextElement (ui.plotNumberBeesView, "Number bees", title_font));
+	add_title (ui.plotNumberBeesView, "Number bees");
 	maximum = 0;
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++)
 		maximum = std::max (maximum, compute_max_range ((*experiment.pixel_count_difference_raw) [2 * i]));
@@ -186,13 +223,13 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	this->ui.plotColourView->yAxis->setLabel ("absolute intensity level");
 	set_colour_axis (this->ui.plotColourView->yAxis);
 	//   allow moving the plot ranges
-	QCustomPlot *range_plots[] = {this->ui.plotColourView, this->ui.plotBeeSpeedView, this->ui.plotNumberBeesView, this->ui.histogramView};
+	QCustomPlot *range_plots[] = {this->ui.plotColourView, this->ui.plotBeeSpeedView, this->ui.plotNumberBeesView, this->ui.histogramSelectedFramesView};
 	for (QCustomPlot *a_plot : range_plots) {
 		a_plot->setInteraction (QCP::iRangeDrag, true);
 		a_plot->setInteraction (QCP::iRangeZoom, true);
 	}
 	// show constant data
-	ui.histogramView->graph (1)->setData (X_COLOURS, *experiment.histogram_background_raw);
+	ui.histogramSelectedFramesView->graph (1)->setData (X_COLOURS, *experiment.histogram_background_raw);
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 		this->ui.plotBeeSpeedView->graph (i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_raw) [i * 2 + 1]);
 		this->ui.plotNumberBeesView->graph (i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_raw) [i * 2]);
@@ -200,6 +237,9 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	most_common_colour_histogram_no_cropping [0] =
 	most_common_colour_histogram_no_cropping [1] = experiment.histogram_background_raw->most_common_colour ();
 	this->ui.plotColourView->graph (0)->setData (experiment.X_FIRST_LAST_FRAMES, most_common_colour_histogram_no_cropping);
+	for (unsigned int i = 0; i < experiment.parameters.number_frames; i++) {
+		this->ui.histogramAllFramesView->graph (i)->setData (X_COLOURS, (*experiment.histogram_frames_all_raw).operator [] (i));
+	}
 	// setup connection between signals and slots
 	QObject::connect (ui.specialOperationRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
 	QObject::connect (ui.showDiffPreviousRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
@@ -297,34 +337,34 @@ void VideoAnalyser::crop_to_rect ()
 
 void VideoAnalyser::update_rect_data ()
 {
-	this->experiment.parameters.x1 = this->ui.x1SpinBox->value ();
-	this->experiment.parameters.y1 = this->ui.y1SpinBox->value ();
-	this->experiment.parameters.x2 = this->ui.x2SpinBox->value ();
-	this->experiment.parameters.y2 = this->ui.y2SpinBox->value ();
+	int x1 = this->ui.x1SpinBox->value ();
+	int y1 = this->ui.y1SpinBox->value ();
+	int x2 = this->ui.x2SpinBox->value ();
+	int y2 = this->ui.y2SpinBox->value ();
 	int current_frame = this->ui.currentFrameSpinBox->value ();
-	delete this->experiment.histogram_frames_rect_raw;
-	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters);
-	this->ui.histogramView->graph (2)->setData (X_COLOURS, (*this->experiment.histogram_frames_rect_raw) [current_frame]);
-	cv::Mat cropped (
-	         this->experiment.background,
-	         cv::Range (this->experiment.parameters.y1, this->experiment.parameters.y2),
-	         cv::Range (this->experiment.parameters.x1, this->experiment.parameters.x2));
+	this->experiment.set_rect_data (x1, y1, x2, y2);
+//	delete this->experiment.histogram_frames_rect_raw;
+//	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters);
+	this->ui.histogramSelectedFramesView->graph (2)->setData (X_COLOURS, (*this->experiment.histogram_frames_rect_raw) [current_frame]);
+	cv::Mat cropped (this->experiment.background, cv::Range (y1, y2), cv::Range (x1, x2));
 	Histogram histogram;
 	compute_histogram (cropped, histogram);
-	this->ui.histogramView->graph (3)->setData (X_COLOURS, histogram);
-	this->ui.histogramView->replot ();
-	delete this->experiment.highest_colour_level_frames_rect;
-	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters);
+	this->ui.histogramSelectedFramesView->graph (3)->setData (X_COLOURS, histogram);
+	this->ui.histogramSelectedFramesView->replot ();
+//	delete this->experiment.highest_colour_level_frames_rect;
+//	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters);
 	this->ui.plotColourView->graph (1)->setData (this->experiment.X_FRAMES, *this->experiment.highest_colour_level_frames_rect);
 	most_common_colour_histogram_cropped_rectangle [0] =
 	      most_common_colour_histogram_cropped_rectangle [1] =
 	      histogram.most_common_colour ();
 	this->ui.plotColourView->graph (2)->setData (experiment.X_FIRST_LAST_FRAMES, most_common_colour_histogram_cropped_rectangle);
 	this->ui.plotColourView->replot ();
-	delete this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM;
-	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM = compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (this->experiment);
-	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC =
-	      compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (this->experiment);
+//	delete this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM;
+//	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM = compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (this->experiment);
+//	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC =
+//	      compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (this->experiment);
+	this->ui.showHistogramsAllFramesLightCalibratedLCRadioButton->setEnabled (true);
+	this->ui.showHistogramsAllFramesLightCalibratedPLSMRadioButton->setEnabled (true);
 	// update the QCustomPlots
 	std::vector<QVector<double> > *pixel_count_difference[] = {
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM,
@@ -340,6 +380,19 @@ void VideoAnalyser::update_rect_data ()
 	}
 	this->ui.plotBeeSpeedView->replot ();
 	this->ui.plotNumberBeesView->replot ();
+	// update plot with histograms of all frames
+	for (unsigned int i = 0; i < experiment.parameters.number_frames; i++) {
+		this->ui.histogramAllFramesView->graph (i + experiment.parameters.number_frames)->setData (
+		      X_COLOURS,
+		      this->experiment.histogram_frames_light_calibrated_most_common_colour_method_PLSM->operator [] (i),
+		      true);
+		this->ui.histogramAllFramesView->graph (i + 2 * experiment.parameters.number_frames)->setData (
+		      X_COLOURS,
+		      this->experiment.histogram_frames_light_calibrated_most_common_colour_method_LC->operator [] (i),
+		      true);
+	}
+//	this->update_displayed_histograms_all_frames ();
+	this->ui.histogramAllFramesView->replot ();
 }
 
 void VideoAnalyser::filter_to_intensity ()
@@ -377,12 +430,28 @@ void VideoAnalyser::update_displayed_pixel_count_difference_plots ()
 
 void VideoAnalyser::update_displayed_histograms ()
 {
-	this->ui.histogramView->graph (0)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
-	this->ui.histogramView->graph (1)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
-	this->ui.histogramView->graph (2)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
-	this->ui.histogramView->graph (3)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
-	this->ui.histogramView->graph (4)->setVisible (this->ui.lightCalibratedHistogramsCheckBox->isChecked ());
-	this->ui.histogramView->replot ();
+	this->ui.histogramSelectedFramesView->graph (0)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (1)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (2)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (3)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (4)->setVisible (this->ui.lightCalibratedHistogramsCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->replot ();
+}
+
+void VideoAnalyser::update_displayed_histograms_all_frames ()
+{
+	static QRadioButton *radio_buttons [] = {
+	   this->ui.showHistogramsAllFramesRawRadioButton,
+	   this->ui.showHistogramsAllFramesLightCalibratedPLSMRadioButton,
+	   this->ui.showHistogramsAllFramesLightCalibratedLCRadioButton,
+	};
+	int d = 0;
+	for (QRadioButton *radio_button : radio_buttons) {
+		for (unsigned int i = 0; i < experiment.parameters.number_frames; i++)
+			this->ui.histogramAllFramesView->graph (i + d)->setVisible (radio_button->isChecked ());
+		d += experiment.parameters.number_frames;
+	}
+	this->ui.histogramAllFramesView->replot ();
 }
 
 void VideoAnalyser::rectangular_area_changed (int)
@@ -402,7 +471,6 @@ void VideoAnalyser::rectangular_area_changed (int)
 
 void VideoAnalyser::update_same_colour_data ()
 {
-
 	printf ("SCT=%d\n", this->ui.sameColourThresholdSpinBox->value ());
 	this->experiment.parameters.set_same_colour_threshold (this->ui.sameColourThresholdSpinBox->value ());
 	this->experiment.pixel_count_difference_raw = compute_pixel_count_difference_raw (this->experiment);
@@ -500,21 +568,21 @@ void VideoAnalyser::update_image (int current_frame)
 void VideoAnalyser::update_histogram_data (int current_frame)
 {
 	const Histogram &histogram = (*this->experiment.histogram_frames_all_raw) [current_frame];
-	this->ui.histogramView->graph (0)->setData (X_COLOURS, histogram);
+	this->ui.histogramSelectedFramesView->graph (0)->setData (X_COLOURS, histogram);
 	if (this->experiment.histogram_frames_rect_raw != NULL) {
 		const Histogram &histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
-		this->ui.histogramView->graph (2)->setData (X_COLOURS, histogram);
+		this->ui.histogramSelectedFramesView->graph (2)->setData (X_COLOURS, histogram);
 	}
-	this->ui.histogramView->graph (4)->setVisible (
+	this->ui.histogramSelectedFramesView->graph (4)->setVisible (
 	         this->experiment.parameters.image_data == LIGHT_CALIBRATED_PLSM_METHOD ||
 	         this->experiment.parameters.image_data == LIGHT_CALIBRATED_LC_METHOD);
 	if (this->experiment.parameters.image_data == LIGHT_CALIBRATED_PLSM_METHOD ||
 	    this->experiment.parameters.image_data == LIGHT_CALIBRATED_LC_METHOD) {
 		Histogram histogram;
 		compute_histogram (displayed_image, histogram);
-		this->ui.histogramView->graph (4)->setData (X_COLOURS, histogram);
+		this->ui.histogramSelectedFramesView->graph (4)->setData (X_COLOURS, histogram);
 	}
-	this->ui.histogramView->replot ();
+	this->ui.histogramSelectedFramesView->replot ();
 }
 
 void VideoAnalyser::update_histogram_item (int intensity_analyse, int same_intensity_level)
@@ -523,7 +591,7 @@ void VideoAnalyser::update_histogram_item (int intensity_analyse, int same_inten
 	this->intensity_analyse_line->end->setCoords (intensity_analyse, 1);
 	this->intensity_span_rect->topLeft->setCoords (max (intensity_analyse - same_intensity_level, 0), 1);
 	this->intensity_span_rect->bottomRight->setCoords (min (intensity_analyse + same_intensity_level, (int) NUMBER_COLOUR_LEVELS), 0);
-	this->ui.histogramView->replot ();
+	this->ui.histogramSelectedFramesView->replot ();
 }
 
 void VideoAnalyser::update_plots (int current_frame)

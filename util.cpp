@@ -19,7 +19,7 @@ void print_image (const cv::Mat &image, const char *name)
 	fprintf (stderr, "Information about %s:\n", name);
 	fprintf (stderr, "   size is %d x %d\n", image.size ().width, image.size ().height);
 	fprintf (stderr, "   number of channels is %d\n", image.channels ());
-	fprintf (stderr, "   size in bytes of the frame elements is %ld\n", image.elemSize ());
+	fprintf (stderr, "   size in bytes of the frame elements is %lu\n", image.elemSize ());
 	cv::Point points[] = {
 		cv::Point (100, 100), cv::Point (110, 100), cv::Point (200, 200)
 	};

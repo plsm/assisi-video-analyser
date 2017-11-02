@@ -45,9 +45,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-6</y>
+         <y>-166</y>
          <width>288</width>
-         <height>975</height>
+         <height>1098</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -381,7 +381,7 @@
            </sizepolicy>
           </property>
           <property name="title">
-           <string>histograms</string>
+           <string>histograms selected frames</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
@@ -402,6 +402,45 @@
             <widget class="QCheckBox" name="lightCalibratedHistogramsCheckBox">
              <property name="text">
               <string>light calibrated</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_7">
+          <property name="title">
+           <string>histograms all frames</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="1" column="0">
+            <widget class="QRadioButton" name="showHistogramsAllFramesLightCalibratedPLSMRadioButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>light calibrated (PLSM method)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QRadioButton" name="showHistogramsAllFramesRawRadioButton">
+             <property name="text">
+              <string>raw</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QRadioButton" name="showHistogramsAllFramesLightCalibratedLCRadioButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>ligth calibrated (LC method)</string>
              </property>
             </widget>
            </item>
@@ -458,12 +497,26 @@
               <enum>Qt::Horizontal</enum>
              </property>
              <widget class="QGraphicsView" name="frameView"/>
-             <widget class="QCustomPlot" name="histogramView" native="true"/>
+             <widget class="QTabWidget" name="tabWidget_2">
+              <property name="currentIndex">
+               <number>1</number>
+              </property>
+              <widget class="QCustomPlot" name="histogramSelectedFramesView">
+               <attribute name="title">
+                <string>selected frames</string>
+               </attribute>
+              </widget>
+              <widget class="QCustomPlot" name="histogramAllFramesView">
+               <attribute name="title">
+                <string>all frames</string>
+               </attribute>
+              </widget>
+             </widget>
             </widget>
            </item>
           </layout>
          </widget>
-         <widget class="QTabWidget" name="tabWidget">
+         <widget class="QTabWidget" name="tabWidget_1">
           <property name="currentIndex">
            <number>2</number>
           </property>
@@ -524,10 +577,63 @@
   <tabstop>histogramBackroundCheckBox</tabstop>
   <tabstop>currentFrameCheckBox</tabstop>
   <tabstop>lightCalibratedHistogramsCheckBox</tabstop>
-  <tabstop>tabWidget</tabstop>
+  <tabstop>tabWidget_1</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>frameView</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>showHistogramsAllFramesLightCalibratedPLSMRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_histograms_all_frames()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>153</x>
+     <y>883</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showHistogramsAllFramesLightCalibratedLCRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_histograms_all_frames()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>153</x>
+     <y>910</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showHistogramsAllFramesRawRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_histograms_all_frames()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>111</x>
+     <y>860</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1044</x>
+     <y>567</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>update_histograms_all_frames()</slot>
+  <slot>update_displayed_histograms_all_frames()</slot>
+ </slots>
 </ui>

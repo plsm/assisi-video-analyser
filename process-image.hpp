@@ -31,6 +31,20 @@ std::map<int, Histogram> *compute_histogram_frames_ROI (const RunParameters &par
 std::map<int, Histogram> *compute_histogram_frames_rect (const UserParameters &parameters);
 
 /**
+ * @brief
+ * compute_histogram_frames_light_calibrated_most_common_colour_method_PLSM
+ * Compute the histograms for all video frames after they have been light
+ * calibrated with the most common colour in a rectangular area of each frame.
+ * Ligth calibration uses the PLSM method.
+ *
+ * @param experiment
+ * @return
+ */
+std::map<int, Histogram> *compute_histogram_frames_light_calibrated_most_common_colour_method_PLSM (const Experiment &experiment);
+
+std::map<int, Histogram> *compute_histogram_frames_light_calibrated_most_common_colour_method_LC (const Experiment &experiment);
+
+/**
  * Compute an image that corresponds to the absolute difference between the
  * background image and a video frame.  This image can be used to get a
  * proxy for where are the bees.
