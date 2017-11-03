@@ -99,7 +99,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	   {.legend = "background - no cropping"          , .pen = QPen (Qt::magenta , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
 	   {.legend = "current frame - cropped rectangle" , .pen = QPen (Qt::blue    , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
 	   {.legend = "background - cropped rectangle"    , .pen = QPen (Qt::red     , 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)},
-		{.legend = "current frame light calibrated"    , .pen = QPen (QColor (127, 127, 0)  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
+	   {.legend = "displayed image"                   , .pen = QPen (QColor (127, 127, 0)  , 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)}
 	};
 	for (int i = 0; i < 5; i++) {
 		graph = ui.histogramSelectedFramesView->addGraph ();
@@ -170,6 +170,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	};
 	Graph_Info_2 feature_info[] = {
 	   {.label = "raw", .pen_style = Qt::SolidLine},
+	   {.label = "histogram equalisation", .pen_style = Qt::DashDotLine},
 	   {.label = "light calibrated most common colour (PLSM)", .pen_style = Qt::DashLine},
 	   {.label = "light calibrated most common colour (LC)", .pen_style = Qt::DotLine},
 	};
@@ -194,16 +195,20 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	this->ui.plotBeeSpeedView->legend->setVisible (true);
 	set_xaxis (this->ui.plotBeeSpeedView->xAxis);
 	maximum = 0;
-	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++)
+	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 		maximum = std::max (maximum, compute_max_range ((*experiment.pixel_count_difference_raw) [2 * i + 1]));
+		maximum = std::max (maximum, compute_max_range ((*experiment.pixel_count_difference_histogram_equalisation) [2 * i + 1]));
+	}
 	this->ui.plotBeeSpeedView->yAxis->setRange (0, maximum);
 	this->ui.plotBeeSpeedView->yAxis->setLabel ("number pixels");
 	this->ui.plotNumberBeesView->legend->setVisible (true);
 	set_xaxis (this->ui.plotNumberBeesView->xAxis);
 	add_title (ui.plotNumberBeesView, "Number bees");
 	maximum = 0;
-	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++)
+	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 		maximum = std::max (maximum, compute_max_range ((*experiment.pixel_count_difference_raw) [2 * i]));
+		maximum = std::max (maximum, compute_max_range ((*experiment.pixel_count_difference_histogram_equalisation) [2 * i]));
+	}
 	this->ui.plotNumberBeesView->yAxis->setRange (0, maximum);
 	this->ui.plotNumberBeesView->yAxis->setLabel ("number pixels");
 	Graph_Info plot_graph_info[] = {
@@ -233,6 +238,8 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 		this->ui.plotBeeSpeedView->graph (i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_raw) [i * 2 + 1]);
 		this->ui.plotNumberBeesView->graph (i)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_raw) [i * 2]);
+		this->ui.plotBeeSpeedView->graph (i + experiment.parameters.number_ROIs)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_histogram_equalisation) [i * 2 + 1]);
+		this->ui.plotNumberBeesView->graph (i + experiment.parameters.number_ROIs)->setData (experiment.X_FRAMES, (*experiment.pixel_count_difference_histogram_equalisation) [i * 2]);
 	}
 	most_common_colour_histogram_no_cropping [0] =
 	most_common_colour_histogram_no_cropping [1] = experiment.histogram_background_raw->most_common_colour ();
@@ -248,11 +255,12 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.intensityAnalyseSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	QObject::connect (ui.sameColourThresholdSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	QObject::connect (ui.rawDataCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
+	QObject::connect (ui.showNumberBeesBeeSpeedPlotsHistogramEqualisationCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
 	QObject::connect (ui.showLightCalibratedPlotsLCMethodCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
 	QObject::connect (ui.showLightCalibratedPlotsPLSMMethodCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
-	QObject::connect (ui.histogramBackroundCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
-	QObject::connect (ui.currentFrameCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
-	QObject::connect (ui.lightCalibratedHistogramsCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
+	QObject::connect (ui.showHistogramsBackroundCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
+	QObject::connect (ui.showHistogramsCurrentFrameCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
+	QObject::connect (ui.showHistogramDisplayedImageCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_histograms ()));
 	QObject::connect (ui.x1SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
 	QObject::connect (ui.x2SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
 	QObject::connect (ui.y1SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
@@ -267,7 +275,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 void VideoAnalyser::update_data (int current_frame)
 {
 	this->update_displayed_image ();
-	this->update_histogram_data (current_frame);
+	this->update_histograms_current_frame (current_frame);
 	this->update_plots (current_frame);
 	this->update_plot_bee_speed ();
 	this->update_plot_number_bees ();
@@ -277,6 +285,7 @@ void VideoAnalyser::update_data (int current_frame)
 
 void VideoAnalyser::update_displayed_image ()
 {
+//	printf ("void VideoAnalyser::update_displayed_image ()\n");
 	unsigned int current_frame = this->ui.currentFrameSpinBox->value ();
 	int x1 = ui.x1SpinBox->value ();
 	int y1 = ui.y1SpinBox->value ();
@@ -375,6 +384,9 @@ void VideoAnalyser::update_displayed_image ()
 	// update widget
 	this->pixmap->setPixmap (QPixmap::fromImage (Mat2QImage (displayed_image, mask)));
 	this->ui.frameView->update ();
+	this->update_histogram_displayed_image ();
+	this->update_image_display_options ();
+	this->ui.showHistogramDisplayedImageCheckBox->setEnabled (this->displayed_image_has_histogram_to_show ());
 }
 
 void VideoAnalyser::update_rect_data ()
@@ -406,7 +418,7 @@ void VideoAnalyser::update_rect_data ()
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM,
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC,
 	};
-	int d = experiment.parameters.number_ROIs;
+	int d = 2 * experiment.parameters.number_ROIs;
 	for (std::vector<QVector<double> > *pcd : pixel_count_difference) {
 		for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
 			this->ui.plotBeeSpeedView->graph (d + i)->setData (experiment.X_FRAMES, (*pcd) [i * 2 + 1]);
@@ -414,6 +426,7 @@ void VideoAnalyser::update_rect_data ()
 		}
 		d += experiment.parameters.number_ROIs;
 	}
+	this->update_PCD_plots_yAxis_range ();
 	this->ui.plotBeeSpeedView->replot ();
 	this->ui.plotNumberBeesView->replot ();
 	// histograms of all frames that have been light calibrated
@@ -445,6 +458,7 @@ void VideoAnalyser::update_displayed_pixel_count_difference_plots ()
 {
 	QCheckBox *check_boxes [] = {
 	   this->ui.rawDataCheckBox,
+	   this->ui.showNumberBeesBeeSpeedPlotsHistogramEqualisationCheckBox,
 	   this->ui.showLightCalibratedPlotsPLSMMethodCheckBox,
 	   this->ui.showLightCalibratedPlotsLCMethodCheckBox,
 	};
@@ -462,11 +476,13 @@ void VideoAnalyser::update_displayed_pixel_count_difference_plots ()
 
 void VideoAnalyser::update_displayed_histograms ()
 {
-	this->ui.histogramSelectedFramesView->graph (0)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
-	this->ui.histogramSelectedFramesView->graph (1)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
-	this->ui.histogramSelectedFramesView->graph (2)->setVisible (this->ui.currentFrameCheckBox->isChecked ());
-	this->ui.histogramSelectedFramesView->graph (3)->setVisible (this->ui.histogramBackroundCheckBox->isChecked ());
-	this->ui.histogramSelectedFramesView->graph (4)->setVisible (this->ui.lightCalibratedHistogramsCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (0)->setVisible (this->ui.showHistogramsCurrentFrameCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (1)->setVisible (this->ui.showHistogramsBackroundCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (2)->setVisible (this->ui.showHistogramsCurrentFrameCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (3)->setVisible (this->ui.showHistogramsBackroundCheckBox->isChecked ());
+	this->ui.histogramSelectedFramesView->graph (4)->setVisible (
+	         this->ui.showHistogramDisplayedImageCheckBox->isChecked ()
+	         && this->displayed_image_has_histogram_to_show ());
 	this->ui.histogramSelectedFramesView->replot ();
 }
 
@@ -506,6 +522,7 @@ void VideoAnalyser::update_same_colour_data ()
 	printf ("SCT=%d\n", this->ui.sameColourThresholdSpinBox->value ());
 	this->experiment.parameters.set_same_colour_threshold (this->ui.sameColourThresholdSpinBox->value ());
 	this->experiment.pixel_count_difference_raw = compute_pixel_count_difference_raw (this->experiment);
+	this->experiment.pixel_count_difference_histogram_equalisation = compute_pixel_count_difference_histogram_equalization (this->experiment);
 	if (this->experiment.highest_colour_level_frames_rect != NULL) {
 		this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM =
 		      compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (this->experiment);
@@ -513,8 +530,10 @@ void VideoAnalyser::update_same_colour_data ()
 		      compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (this->experiment);
 	}
 	// update the QCustomPlots
+	this->update_PCD_plots_yAxis_range ();
 	std::vector<QVector<double> > *pixel_count_difference[] = {
 	   experiment.pixel_count_difference_raw,
+	   experiment.pixel_count_difference_histogram_equalisation,
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM,
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC,
 	};
@@ -531,19 +550,21 @@ void VideoAnalyser::update_same_colour_data ()
 	this->ui.plotNumberBeesView->replot ();
 }
 
-void VideoAnalyser::update_pre_processing_options (bool)
-{
-	bool flag = this->ui.showBackgroundImageRadioButton->isChecked () ||
-	      this->ui.specialOperationRadioButton->isChecked ();
-	this->ui.lightCalibratedLCMethodRadioButton->setEnabled (!flag);
-	this->ui.lightCalibratedPLSMMethodRadioButton->setEnabled (!flag);
-	this->ui.histogramEqualisationRadioButton->setEnabled (
-	         !this->ui.specialOperationRadioButton->isChecked ());
-}
-
 // VideoAnalyser PRIVATE METHODS
 
-void VideoAnalyser::update_histogram_data (int current_frame)
+bool VideoAnalyser::displayed_image_has_histogram_to_show ()
+{
+	return
+	      (this->ui.showVideoFrameRadioButton->isChecked () && (
+	         this->ui.lightCalibratedLCMethodRadioButton->isChecked ()
+	         || this->ui.lightCalibratedPLSMMethodRadioButton->isChecked ()
+	         ))
+	      || this->ui.showDiffBackgroundRadioButton->isChecked ()
+	      || this->ui.showDiffPreviousRadioButton->isChecked ()
+	      ;
+}
+
+void VideoAnalyser::update_histograms_current_frame (int current_frame)
 {
 	const Histogram &histogram = (*this->experiment.histogram_frames_all_raw) [current_frame];
 	this->ui.histogramSelectedFramesView->graph (0)->setData (X_COLOURS, histogram);
@@ -551,11 +572,17 @@ void VideoAnalyser::update_histogram_data (int current_frame)
 		const Histogram &histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
 		this->ui.histogramSelectedFramesView->graph (2)->setData (X_COLOURS, histogram);
 	}
-	bool display_histogram_displayed_image =
-	      this->ui.lightCalibratedLCMethodRadioButton->isChecked () ||
-	      this->ui.lightCalibratedPLSMMethodRadioButton->isChecked ();
-	this->ui.histogramSelectedFramesView->graph (4)->setVisible (display_histogram_displayed_image);
-	if (display_histogram_displayed_image) {
+	this->ui.histogramSelectedFramesView->replot ();
+}
+
+void VideoAnalyser::update_histogram_displayed_image ()
+{
+//	printf ("void VideoAnalyser::update_histogram_displayed_image (bool)\n");
+	bool visible =
+	      this->displayed_image_has_histogram_to_show ()
+	      && this->ui.showHistogramDisplayedImageCheckBox->isChecked ();
+	this->ui.histogramSelectedFramesView->graph (4)->setVisible (visible);
+	if (visible) {
 		Histogram histogram;
 		compute_histogram (displayed_image, histogram);
 		this->ui.histogramSelectedFramesView->graph (4)->setData (X_COLOURS, histogram);
@@ -595,6 +622,42 @@ void VideoAnalyser::update_plot_colours ()
 {
 }
 
+void VideoAnalyser::update_image_display_options ()
+{
+	bool flag = this->ui.showBackgroundImageRadioButton->isChecked () ||
+	      this->ui.specialOperationRadioButton->isChecked ();
+	this->ui.lightCalibratedLCMethodRadioButton->setEnabled (!flag);
+	this->ui.lightCalibratedPLSMMethodRadioButton->setEnabled (!flag);
+	this->ui.histogramEqualisationRadioButton->setEnabled (
+	         !this->ui.specialOperationRadioButton->isChecked ());
+}
+
+void VideoAnalyser::update_PCD_plots_yAxis_range ()
+{
+	double maximum;
+	std::vector<QVector<double> > *PCDs [] = {
+	   experiment.pixel_count_difference_raw,
+	   experiment.pixel_count_difference_histogram_equalisation,
+	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC,
+	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM
+	};
+	maximum = 0;
+	for (std::vector<QVector<double> > *a_pcd : PCDs)
+		if (a_pcd != NULL) {
+			for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++)
+				maximum = std::max (maximum, compute_max_range ((*a_pcd) [2 * i + 1]));
+		}
+	this->ui.plotBeeSpeedView->yAxis->setRange (0, maximum);
+	maximum = 0;
+	for (std::vector<QVector<double> > *a_pcd : PCDs)
+		if (a_pcd != NULL) {
+			for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++)
+				maximum = std::max (maximum, compute_max_range ((*a_pcd) [2 * i]));
+		}
+	this->ui.plotNumberBeesView->yAxis->setRange (0, maximum);
+}
+
+
 QImage Mat2QImage (const cv::Mat &image, const cv::Mat &mask)
 {
 	QImage dest (image.cols, image.rows, QImage::Format_ARGB32);
@@ -618,6 +681,8 @@ double compute_max_range (const QVector<double> &data)
 	double maximum = data [0];
 	for (double x : data)
 		maximum = max (x, maximum);
+	if (maximum == 0)
+		return 0;
 	double power = ceil (log10 (maximum));
 	double result = pow (10, power);
 	double delta = pow (10, power - 1) / 2;

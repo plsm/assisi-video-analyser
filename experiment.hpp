@@ -35,6 +35,12 @@ public:
 	 */
 	std::vector<QVector<double> > *pixel_count_difference_raw;
 	/**
+	 * @brief pixel_count_difference_histogram_equalisation Cache with the pixel
+	 * count difference using images that have been through histogram
+	 * equalisation.
+	 */
+	std::vector<QVector<double> > *pixel_count_difference_histogram_equalisation;
+	/**
 	 * @brief Cache with the pixel count difference between background image and
 	 * light calibrated frame and between light calibrated frames x seconds
 	 * apart, for all regions of interest, using the most common colour to calibrate.

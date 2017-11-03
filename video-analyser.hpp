@@ -36,7 +36,6 @@ public slots:
 	void update_displayed_histograms_all_frames ();
 	void rectangular_area_changed (int);
 	void update_same_colour_data ();
-	void update_pre_processing_options (bool);
 private:
 	Animate animate;
 	QGraphicsScene *scene;
@@ -49,12 +48,16 @@ private:
 	QVector<double> most_common_colour_histogram_cropped_rectangle;
 	std::vector<QColor> mask_colour;
 	cv::Mat displayed_image;
-	void update_histogram_data (int current_frame);
+	bool displayed_image_has_histogram_to_show ();
+	void update_histograms_current_frame (int current_frame);
+	void update_histogram_displayed_image ();
 	void update_histogram_item (int intensity_analyse, int same_intensity_level);
 	void update_plots (int current_frame);
 	void update_plot_bee_speed ();
 	void update_plot_number_bees ();
 	void update_plot_colours ();
+	void update_image_display_options ();
+	void update_PCD_plots_yAxis_range ();
 };
 
 #endif

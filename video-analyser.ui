@@ -45,9 +45,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-245</y>
          <width>288</width>
-         <height>1209</height>
+         <height>1236</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -376,7 +376,7 @@
            </sizepolicy>
           </property>
           <property name="title">
-           <string>plots</string>
+           <string>plots number of bees and bee speed</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
@@ -386,6 +386,13 @@
              </property>
              <property name="checked">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="showNumberBeesBeeSpeedPlotsHistogramEqualisationCheckBox">
+             <property name="text">
+              <string>histogram equalisation</string>
              </property>
             </widget>
            </item>
@@ -419,23 +426,29 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QCheckBox" name="histogramBackroundCheckBox">
+            <widget class="QCheckBox" name="showHistogramsBackroundCheckBox">
              <property name="text">
               <string>background</string>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="currentFrameCheckBox">
-             <property name="text">
-              <string>current frame</string>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="lightCalibratedHistogramsCheckBox">
+            <widget class="QCheckBox" name="showHistogramsCurrentFrameCheckBox">
              <property name="text">
-              <string>light calibrated</string>
+              <string>current frame</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="showHistogramDisplayedImageCheckBox">
+             <property name="text">
+              <string>displayed image</string>
              </property>
             </widget>
            </item>
@@ -600,9 +613,9 @@
   <tabstop>cropToRectCheckBox</tabstop>
   <tabstop>filterToIntensityCheckBox</tabstop>
   <tabstop>showLightCalibratedPlotsPLSMMethodCheckBox</tabstop>
-  <tabstop>histogramBackroundCheckBox</tabstop>
-  <tabstop>currentFrameCheckBox</tabstop>
-  <tabstop>lightCalibratedHistogramsCheckBox</tabstop>
+  <tabstop>showHistogramsBackroundCheckBox</tabstop>
+  <tabstop>showHistogramsCurrentFrameCheckBox</tabstop>
+  <tabstop>showHistogramDisplayedImageCheckBox</tabstop>
   <tabstop>tabWidget_1</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>frameView</tabstop>
@@ -802,38 +815,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>showBackgroundImageRadioButton</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>update_pre_processing_options(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>256</x>
-     <y>484</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>303</x>
-     <y>211</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>specialOperationRadioButton</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>update_pre_processing_options(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>186</x>
-     <y>592</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>521</x>
-     <y>475</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>histogramEqualisationRadioButton</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
@@ -855,5 +836,6 @@
   <slot>update_displayed_histograms_all_frames()</slot>
   <slot>update_displayed_image()</slot>
   <slot>update_pre_processing_options(bool)</slot>
+  <slot>update_histogram_displayed_image(bool)</slot>
  </slots>
 </ui>
