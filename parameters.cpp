@@ -100,8 +100,6 @@ UserParameters::UserParameters (const string &folder, const string &frame_file_t
    RunParameters (folder, frame_file_type, number_ROIs, delta_frame),
    same_colour_threshold (same_colour_threshold),
    same_colour_level (round ((NUMBER_COLOUR_LEVELS * same_colour_threshold) / 100.0)),
-   equalize_histograms (false),
-   image_data (CURRENT_FRAME),
    x1 (numeric_limits<int>::max ()),
    y1 (numeric_limits<int>::max ()),
    x2 (numeric_limits<int>::min ()),

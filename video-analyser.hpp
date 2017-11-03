@@ -28,17 +28,15 @@ public:
 	VideoAnalyser (Experiment &experiment);
 public slots:
 	void update_data (int current_frame);
-	void histogram_equalisation (int new_state);
 	void update_displayed_image ();
-	void crop_to_rect ();
 	void update_rect_data ();
-	void filter_to_intensity ();
 	void update_filtered_intensity (int);
 	void update_displayed_pixel_count_difference_plots ();
 	void update_displayed_histograms ();
 	void update_displayed_histograms_all_frames ();
 	void rectangular_area_changed (int);
 	void update_same_colour_data ();
+	void update_pre_processing_options (bool);
 private:
 	Animate animate;
 	QGraphicsScene *scene;
@@ -51,7 +49,6 @@ private:
 	QVector<double> most_common_colour_histogram_cropped_rectangle;
 	std::vector<QColor> mask_colour;
 	cv::Mat displayed_image;
-	void update_image (int current_frame);
 	void update_histogram_data (int current_frame);
 	void update_histogram_item (int intensity_analyse, int same_intensity_level);
 	void update_plots (int current_frame);

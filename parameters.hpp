@@ -154,17 +154,6 @@ public:
 	}
 };
 
-typedef enum {
-	BACKGROUND_IMAGE,
-	CURRENT_FRAME,
-	DIFF_BACKGROUND_IMAGE,
-	DIFF_PREVIOUS_IMAGE,
-	SPECIAL_DATA,
-	LIGHT_CALIBRATED_PLSM_METHOD,
-	LIGHT_CALIBRATED_LC_METHOD,
-	__NUMBER_IMAGE_DATA__
-} ImageData;
-
 /**
  * Parameters that the user can set and that affect image processing functions.
  */
@@ -181,8 +170,6 @@ class UserParameters: public RunParameters
 	unsigned int same_colour_threshold;
 	unsigned int same_colour_level;
 public:
-	bool equalize_histograms;
-	ImageData image_data;
 	/**
 	 * @brief x1 lowest horizontal coordinate of the rectangular area used in light calibration.
 	 */

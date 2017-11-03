@@ -177,13 +177,7 @@ cv::Mat compute_difference_background_image (const UserParameters &parameters, i
 	cv::Mat frame = cv::imread (parameters.frame_filename (index_frame), CV_LOAD_IMAGE_GRAYSCALE);
 	cv::Mat diff;
 	cv::absdiff (background, frame, diff);
-	if (parameters.equalize_histograms) {
-		cv::Mat result;
-		cv::equalizeHist (diff, result);
-		return result;
-	}
-	else
-		return diff;
+	return diff;
 }
 
 cv::Mat compute_difference_previous_image (const UserParameters &parameters, int index_frame)
@@ -192,13 +186,7 @@ cv::Mat compute_difference_previous_image (const UserParameters &parameters, int
 	cv::Mat previous_frame = read_frame (parameters, index_frame - parameters.delta_frame);
 	cv::Mat diff;
 	cv::absdiff (previous_frame, current_frame, diff);
-	if (parameters.equalize_histograms) {
-		cv::Mat result;
-		cv::equalizeHist (diff, result);
-		return result;
-	}
-	else
-		return diff;
+	return diff;
 }
 
 cv::Mat compute_threshold_mask_diff_background_diff_previous (const UserParameters &parameters, int index_frame)

@@ -45,9 +45,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-166</y>
+         <y>0</y>
          <width>288</width>
-         <height>1098</height>
+         <height>1209</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -258,55 +258,96 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
-            <widget class="QRadioButton" name="showBackgroundImageRadioButton">
-             <property name="text">
-              <string>background</string>
+            <widget class="QGroupBox" name="groupBox_8">
+             <property name="title">
+              <string>what</string>
              </property>
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <item>
+               <widget class="QRadioButton" name="showBackgroundImageRadioButton">
+                <property name="text">
+                 <string>background</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="showVideoFrameRadioButton">
+                <property name="text">
+                 <string>frame</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="showDiffBackgroundRadioButton">
+                <property name="text">
+                 <string>difference background frame</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="showDiffPreviousRadioButton">
+                <property name="text">
+                 <string>difference previous frames</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="specialOperationRadioButton">
+                <property name="text">
+                 <string>special operation</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
-            <widget class="QRadioButton" name="showVideoFrameRadioButton">
-             <property name="text">
-              <string>frame</string>
+            <widget class="QGroupBox" name="groupBox_9">
+             <property name="title">
+              <string>pre-processing</string>
              </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="showDiffBackgroundRadioButton">
-             <property name="text">
-              <string>difference background frame</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="showDiffPreviousRadioButton">
-             <property name="text">
-              <string>difference previous frames</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="specialOperationRadioButton">
-             <property name="text">
-              <string>special operation</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="lightCalibratedPLSMMethodRadioButton">
-             <property name="text">
-              <string>light calibrated (PLSM method)</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="lightCalibratedLCMethodRadioButton">
-             <property name="text">
-              <string>light calibrated (LC method)</string>
-             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <item>
+               <widget class="QRadioButton" name="noPreProcessedImageRadioButton">
+                <property name="text">
+                 <string>no pre-processing</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="histogramEqualisationRadioButton">
+                <property name="text">
+                 <string>histogram equalisation</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="lightCalibratedPLSMMethodRadioButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>light calibrated (PLSM method)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="lightCalibratedLCMethodRadioButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>light calibrated (LC method)</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
@@ -320,13 +361,6 @@
             <widget class="QCheckBox" name="filterToIntensityCheckBox">
              <property name="text">
               <string>filter to intensity</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="histogramEqualisationCheckBox">
-             <property name="text">
-              <string>histogram equalisation</string>
              </property>
             </widget>
            </item>
@@ -563,16 +597,8 @@
   <tabstop>x2SpinBox</tabstop>
   <tabstop>y2SpinBox</tabstop>
   <tabstop>updateRectPushButton</tabstop>
-  <tabstop>showBackgroundImageRadioButton</tabstop>
-  <tabstop>showVideoFrameRadioButton</tabstop>
-  <tabstop>showDiffBackgroundRadioButton</tabstop>
-  <tabstop>showDiffPreviousRadioButton</tabstop>
-  <tabstop>specialOperationRadioButton</tabstop>
-  <tabstop>lightCalibratedPLSMMethodRadioButton</tabstop>
-  <tabstop>lightCalibratedLCMethodRadioButton</tabstop>
   <tabstop>cropToRectCheckBox</tabstop>
   <tabstop>filterToIntensityCheckBox</tabstop>
-  <tabstop>histogramEqualisationCheckBox</tabstop>
   <tabstop>showLightCalibratedPlotsPLSMMethodCheckBox</tabstop>
   <tabstop>histogramBackroundCheckBox</tabstop>
   <tabstop>currentFrameCheckBox</tabstop>
@@ -590,8 +616,8 @@
    <slot>update_displayed_histograms_all_frames()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>153</x>
-     <y>883</y>
+     <x>174</x>
+     <y>1150</y>
     </hint>
     <hint type="destinationlabel">
      <x>521</x>
@@ -606,8 +632,8 @@
    <slot>update_displayed_histograms_all_frames()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>153</x>
-     <y>910</y>
+     <x>174</x>
+     <y>1177</y>
     </hint>
     <hint type="destinationlabel">
      <x>521</x>
@@ -622,8 +648,8 @@
    <slot>update_displayed_histograms_all_frames()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>111</x>
-     <y>860</y>
+     <x>132</x>
+     <y>1123</y>
     </hint>
     <hint type="destinationlabel">
      <x>1044</x>
@@ -631,9 +657,203 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>showBackgroundImageRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>154</x>
+     <y>484</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>301</x>
+     <y>51</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showVideoFrameRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>218</x>
+     <y>511</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>301</x>
+     <y>121</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showDiffBackgroundRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>264</x>
+     <y>538</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>302</x>
+     <y>249</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showDiffPreviousRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>213</x>
+     <y>565</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>302</x>
+     <y>306</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>specialOperationRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>190</x>
+     <y>592</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>300</x>
+     <y>350</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>filterToIntensityCheckBox</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>174</x>
+     <y>828</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>noPreProcessedImageRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>186</x>
+     <y>661</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lightCalibratedLCMethodRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>186</x>
+     <y>762</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lightCalibratedPLSMMethodRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>186</x>
+     <y>721</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showBackgroundImageRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_pre_processing_options(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>256</x>
+     <y>484</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>303</x>
+     <y>211</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>specialOperationRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_pre_processing_options(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>186</x>
+     <y>592</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>histogramEqualisationRadioButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>update_displayed_image()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>153</x>
+     <y>698</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>475</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>update_histograms_all_frames()</slot>
   <slot>update_displayed_histograms_all_frames()</slot>
+  <slot>update_displayed_image()</slot>
+  <slot>update_pre_processing_options(bool)</slot>
  </slots>
 </ui>

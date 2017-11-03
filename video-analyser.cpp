@@ -241,20 +241,10 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 		this->ui.histogramAllFramesView->graph (i)->setData (X_COLOURS, (*experiment.histogram_frames_all_raw).operator [] (i));
 	}
 	// setup connection between signals and slots
-	QObject::connect (ui.specialOperationRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
-	QObject::connect (ui.showDiffPreviousRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
-	QObject::connect (ui.showDiffBackgroundRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
-	QObject::connect (ui.showVideoFrameRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
-	QObject::connect (ui.lightCalibratedPLSMMethodRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
-	QObject::connect (ui.lightCalibratedLCMethodRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
-	QObject::connect (ui.showBackgroundImageRadioButton, SIGNAL (clicked ()), this, SLOT (update_displayed_image ()));
-	QObject::connect (ui.cropToRectCheckBox, SIGNAL (clicked ()), this, SLOT (crop_to_rect ()));
-	QObject::connect (ui.histogramEqualisationCheckBox, SIGNAL (stateChanged (int)), this, SLOT (histogram_equalisation (int)));
 	QObject::connect (ui.currentFrameSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_data (int)));
 	QObject::connect (ui.updateRectPushButton, SIGNAL (clicked ()), this, SLOT (update_rect_data ()));
 	QObject::connect (ui.playStopButton, SIGNAL (clicked ()), &this->animate, SLOT (play_stop ()));
 	QObject::connect (ui.framesPerSecondSpinBox, SIGNAL (valueChanged (double)), &this->animate, SLOT (update_playback_speed (double)));
-	QObject::connect (ui.filterToIntensityCheckBox, SIGNAL (clicked ()), this, SLOT (filter_to_intensity ()));
 	QObject::connect (ui.intensityAnalyseSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	QObject::connect (ui.sameColourThresholdSpinBox, SIGNAL (valueChanged (int)), this, SLOT (update_filtered_intensity (int)));
 	QObject::connect (ui.rawDataCheckBox, SIGNAL (clicked ()), this, SLOT (update_displayed_pixel_count_difference_plots ()));
@@ -269,7 +259,6 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	QObject::connect (ui.y2SpinBox, SIGNAL (valueChanged (int)), this, SLOT (rectangular_area_changed (int)));
 	QObject::connect (ui.updateSameColourThresholdDataPushButton, SIGNAL (clicked ()), this, SLOT (update_same_colour_data ()));
 	//
-	this->experiment.parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
 	this->update_data (this->ui.currentFrameSpinBox->value ());
 }
 
@@ -277,62 +266,115 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 
 void VideoAnalyser::update_data (int current_frame)
 {
-	this->update_image (current_frame);
+	this->update_displayed_image ();
 	this->update_histogram_data (current_frame);
 	this->update_plots (current_frame);
 	this->update_plot_bee_speed ();
 	this->update_plot_number_bees ();
 	this->update_plot_colours ();
-}
-
-void VideoAnalyser::histogram_equalisation (int)
-{
-	this->experiment.parameters.equalize_histograms = this->ui.histogramEqualisationCheckBox->isChecked ();
-	if (this->ui.showDiffPreviousRadioButton->isChecked () ||
-		 this->ui.showDiffBackgroundRadioButton->isChecked ())
-		this->update_image (this->ui.currentFrameSpinBox->value ());
+	this->ui.showDiffPreviousRadioButton->setEnabled (current_frame > (int) experiment.parameters.delta_frame + 1);
 }
 
 void VideoAnalyser::update_displayed_image ()
 {
-	bool change = false;
-	if (this->ui.showVideoFrameRadioButton->isChecked ()) {
-		change = this->experiment.parameters.image_data != CURRENT_FRAME;
-		this->experiment.parameters.image_data = CURRENT_FRAME;
+	unsigned int current_frame = this->ui.currentFrameSpinBox->value ();
+	int x1 = ui.x1SpinBox->value ();
+	int y1 = ui.y1SpinBox->value ();
+	int x2 = ui.x2SpinBox->value ();
+	int y2 = ui.y2SpinBox->value ();
+	cv::Mat processed_image;
+	// first step
+	auto pre_process_background = [&] () {
+		if (ui.noPreProcessedImageRadioButton->isChecked ())
+			return experiment.background;
+		else if (ui.lightCalibratedPLSMMethodRadioButton->isChecked ())
+			return experiment.background;
+		else if (ui.lightCalibratedLCMethodRadioButton->isChecked ())
+			return experiment.background;
+		else if (ui.histogramEqualisationRadioButton->isChecked ()) {
+			cv::Mat result;
+			equalizeHist (experiment.background, result);
+			return result;
+		}
+		throw "missing pre-processing option";
+	};
+	auto pre_process_frame = [&] (unsigned int index_frame) {
+		if (this->ui.noPreProcessedImageRadioButton->isChecked ())
+			return read_frame (experiment.parameters, index_frame);
+		else if (this->ui.lightCalibratedPLSMMethodRadioButton->isChecked ())
+			return light_calibrate (this->experiment, index_frame, x1, y1, x2, y2, light_calibrate_method_PLSM);
+		else if (this->ui.lightCalibratedLCMethodRadioButton->isChecked ())
+			return light_calibrate (this->experiment, index_frame, x1, y1, x2, y2, light_calibrate_method_LC);
+		else if (ui.histogramEqualisationRadioButton->isChecked ()) {
+			cv::Mat result;
+			cv::Mat frame = read_frame (experiment.parameters, index_frame);
+			equalizeHist (frame, result);
+			return result;
+		}
+		throw "missing pre-processing option";
+	};
+	// second step
+	if (this->ui.showBackgroundImageRadioButton->isChecked ())
+		processed_image = pre_process_background ();
+	else if (this->ui.showVideoFrameRadioButton->isChecked ())
+		processed_image = pre_process_frame (current_frame);
+	else if (this->ui.showDiffBackgroundRadioButton->isChecked ())
+		cv::absdiff (
+		         pre_process_background (),
+		         pre_process_frame (current_frame),
+		         processed_image);
+	else if (this->ui.showDiffPreviousRadioButton->isChecked ())
+		cv::absdiff (
+		         pre_process_frame (current_frame - 1 - experiment.parameters.delta_frame),
+		         pre_process_frame (current_frame),
+		         processed_image);
+	else if (this->ui.specialOperationRadioButton->isChecked ())
+		processed_image = compute_threshold_mask_diff_background_diff_previous (this->experiment.parameters, current_frame);
+	// third step
+	if (this->ui.cropToRectCheckBox->isChecked ())
+		displayed_image = cv::Mat (processed_image, cv::Range (y1, y2), cv::Range (x1, x2));
+	else
+		displayed_image = processed_image;
+	// fourth step
+	cv::Mat mask;
+	if (this->ui.filterToIntensityCheckBox->isChecked ()) {
+		cv::Mat mask1, mask2, tmp_image;
+		double intensity_analyse;
+		double same_intensity_level;
+		if (ui.showBackgroundImageRadioButton->isChecked () ||
+		    ui.showVideoFrameRadioButton->isChecked ()) {
+			intensity_analyse = this->ui.intensityAnalyseSpinBox->value ();
+			same_intensity_level = this->ui.sameColourThresholdSpinBox->value () * NUMBER_COLOUR_LEVELS / 100;
+		}
+		else if (ui.showDiffBackgroundRadioButton->isChecked () ||
+		         ui.showDiffPreviousRadioButton->isChecked ()) {
+			intensity_analyse = NUMBER_COLOUR_LEVELS;
+			same_intensity_level = (100 - this->ui.sameColourThresholdSpinBox->value ()) * NUMBER_COLOUR_LEVELS / 100;
+		}
+		if (intensity_analyse > same_intensity_level) {
+			cv::threshold (displayed_image, mask1, intensity_analyse - same_intensity_level - 1, NUMBER_COLOUR_LEVELS, cv::THRESH_BINARY);
+			cv::threshold (displayed_image, tmp_image, intensity_analyse - same_intensity_level - 1, 0, cv::THRESH_TOZERO);
+		}
+		else  {
+			mask1 = cv::Mat::ones (displayed_image.size ().height, displayed_image.size ().width, CV_8UC1);
+			tmp_image = displayed_image;
+		}
+		if (intensity_analyse + same_intensity_level < NUMBER_COLOUR_LEVELS ) {
+			cv::threshold (displayed_image, mask2, intensity_analyse + same_intensity_level + 1, NUMBER_COLOUR_LEVELS, cv::THRESH_BINARY_INV);
+			cv::threshold (tmp_image, displayed_image, intensity_analyse + same_intensity_level + 1, 0, cv::THRESH_TOZERO_INV);
+		}
+		else {
+			mask2 = cv::Mat::ones (displayed_image.size ().height, displayed_image.size ().width, CV_8UC1);
+			displayed_image = tmp_image;
+		}
+		mask = mask1 & mask2;
 	}
-	else if (this->ui.showBackgroundImageRadioButton->isChecked ()) {
-		change = this->experiment.parameters.image_data != BACKGROUND_IMAGE;
-		this->experiment.parameters.image_data = BACKGROUND_IMAGE;
+	else {
+		mask = cv::Mat::ones (displayed_image.size ().height, displayed_image.size ().width, CV_8UC1);
 	}
-	else if (this->ui.showDiffPreviousRadioButton->isChecked () && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame) {
-		change = this->experiment.parameters.image_data != DIFF_PREVIOUS_IMAGE;
-		this->experiment.parameters.image_data = DIFF_PREVIOUS_IMAGE;
-	}
-	else if (this->ui.showDiffBackgroundRadioButton->isChecked ()) {
-		change = this->experiment.parameters.image_data != DIFF_BACKGROUND_IMAGE;
-		this->experiment.parameters.image_data = DIFF_BACKGROUND_IMAGE;
-	}
-	else if (this->ui.specialOperationRadioButton->isChecked () && (unsigned) this->ui.currentFrameSpinBox->value () > this->experiment.parameters.delta_frame) {
-		change = this->experiment.parameters.image_data != SPECIAL_DATA;
-		this->experiment.parameters.image_data = SPECIAL_DATA;
-	}
-	else if (this->ui.lightCalibratedPLSMMethodRadioButton->isChecked ()) {
-		change = this->experiment.parameters.image_data != LIGHT_CALIBRATED_PLSM_METHOD;
-		this->experiment.parameters.image_data = LIGHT_CALIBRATED_PLSM_METHOD;
-	}
-	else if (this->ui.lightCalibratedLCMethodRadioButton->isChecked ()) {
-		change = this->experiment.parameters.image_data != LIGHT_CALIBRATED_LC_METHOD;
-		this->experiment.parameters.image_data = LIGHT_CALIBRATED_LC_METHOD;
-	}
-	if (change) {
-		this->update_image (this->ui.currentFrameSpinBox->value ());
-		this->update_histogram_data (this->ui.currentFrameSpinBox->value ());
-	}
-}
-
-void VideoAnalyser::crop_to_rect ()
-{
-	this->update_image (this->ui.currentFrameSpinBox->value ());
+	// update widget
+	this->pixmap->setPixmap (QPixmap::fromImage (Mat2QImage (displayed_image, mask)));
+	this->ui.frameView->update ();
 }
 
 void VideoAnalyser::update_rect_data ()
@@ -343,29 +385,23 @@ void VideoAnalyser::update_rect_data ()
 	int y2 = this->ui.y2SpinBox->value ();
 	int current_frame = this->ui.currentFrameSpinBox->value ();
 	this->experiment.set_rect_data (x1, y1, x2, y2);
-//	delete this->experiment.histogram_frames_rect_raw;
-//	this->experiment.histogram_frames_rect_raw = compute_histogram_frames_rect (this->experiment.parameters);
+	// histograms of selected frames
+	//    histogram of current frame - no cropping
 	this->ui.histogramSelectedFramesView->graph (2)->setData (X_COLOURS, (*this->experiment.histogram_frames_rect_raw) [current_frame]);
+	//    histogram of background - cropped rectangle
 	cv::Mat cropped (this->experiment.background, cv::Range (y1, y2), cv::Range (x1, x2));
 	Histogram histogram;
 	compute_histogram (cropped, histogram);
 	this->ui.histogramSelectedFramesView->graph (3)->setData (X_COLOURS, histogram);
 	this->ui.histogramSelectedFramesView->replot ();
-//	delete this->experiment.highest_colour_level_frames_rect;
-//	this->experiment.highest_colour_level_frames_rect = compute_highest_colour_level_frames_rect (this->experiment.parameters);
+	// plot of most common colour in rectangular area in frame vs frame
 	this->ui.plotColourView->graph (1)->setData (this->experiment.X_FRAMES, *this->experiment.highest_colour_level_frames_rect);
 	most_common_colour_histogram_cropped_rectangle [0] =
 	      most_common_colour_histogram_cropped_rectangle [1] =
 	      histogram.most_common_colour ();
 	this->ui.plotColourView->graph (2)->setData (experiment.X_FIRST_LAST_FRAMES, most_common_colour_histogram_cropped_rectangle);
 	this->ui.plotColourView->replot ();
-//	delete this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM;
-//	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM = compute_pixel_count_difference_light_calibrated_most_common_colour_method_PLSM (this->experiment);
-//	this->experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC =
-//	      compute_pixel_count_difference_light_calibrated_most_common_colour_method_LC (this->experiment);
-	this->ui.showHistogramsAllFramesLightCalibratedLCRadioButton->setEnabled (true);
-	this->ui.showHistogramsAllFramesLightCalibratedPLSMRadioButton->setEnabled (true);
-	// update the QCustomPlots
+	// plots with number of bees and bee speed using light calibrated data
 	std::vector<QVector<double> > *pixel_count_difference[] = {
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_PLSM,
 	   experiment.pixel_count_difference_light_calibrated_most_common_colour_method_LC,
@@ -380,7 +416,7 @@ void VideoAnalyser::update_rect_data ()
 	}
 	this->ui.plotBeeSpeedView->replot ();
 	this->ui.plotNumberBeesView->replot ();
-	// update plot with histograms of all frames
+	// histograms of all frames that have been light calibrated
 	for (unsigned int i = 0; i < experiment.parameters.number_frames; i++) {
 		this->ui.histogramAllFramesView->graph (i + experiment.parameters.number_frames)->setData (
 		      X_COLOURS,
@@ -391,21 +427,17 @@ void VideoAnalyser::update_rect_data ()
 		      this->experiment.histogram_frames_light_calibrated_most_common_colour_method_LC->operator [] (i),
 		      true);
 	}
-//	this->update_displayed_histograms_all_frames ();
 	this->ui.histogramAllFramesView->replot ();
-}
-
-void VideoAnalyser::filter_to_intensity ()
-{
-	this->update_image (this->ui.currentFrameSpinBox->value ());
-	this->update_histogram_data (this->ui.currentFrameSpinBox->value ());
+	// other stuff
+	this->ui.showHistogramsAllFramesLightCalibratedLCRadioButton->setEnabled (true);
+	this->ui.showHistogramsAllFramesLightCalibratedPLSMRadioButton->setEnabled (true);
 }
 
 void VideoAnalyser::update_filtered_intensity (int)
 {
 	this->update_histogram_item (this->ui.intensityAnalyseSpinBox->value (), this->ui.sameColourThresholdSpinBox->value () * NUMBER_COLOUR_LEVELS / 100);
 	if (this->ui.filterToIntensityCheckBox->isChecked ()) {
-		this->update_image (this->ui.currentFrameSpinBox->value ());
+		this->update_displayed_image ();
 	}
 }
 
@@ -466,7 +498,7 @@ void VideoAnalyser::rectangular_area_changed (int)
 	ui.y2SpinBox->setMinimum (y1 + 1);
 	this->roi->setRect (x1, y1, x2 - x1, y2 - y1);
 	if (ui.cropToRectCheckBox->isChecked ())
-		this->update_image (ui.currentFrameSpinBox->value ());
+		this->update_displayed_image ();
 }
 
 void VideoAnalyser::update_same_colour_data ()
@@ -499,71 +531,17 @@ void VideoAnalyser::update_same_colour_data ()
 	this->ui.plotNumberBeesView->replot ();
 }
 
+void VideoAnalyser::update_pre_processing_options (bool)
+{
+	bool flag = this->ui.showBackgroundImageRadioButton->isChecked () ||
+	      this->ui.specialOperationRadioButton->isChecked ();
+	this->ui.lightCalibratedLCMethodRadioButton->setEnabled (!flag);
+	this->ui.lightCalibratedPLSMMethodRadioButton->setEnabled (!flag);
+	this->ui.histogramEqualisationRadioButton->setEnabled (
+	         !this->ui.specialOperationRadioButton->isChecked ());
+}
 
 // VideoAnalyser PRIVATE METHODS
-
-void VideoAnalyser::update_image (int current_frame)
-{
-	int x1 = ui.x1SpinBox->value ();
-	int y1 = ui.y1SpinBox->value ();
-	int x2 = ui.x2SpinBox->value ();
-	int y2 = ui.y2SpinBox->value ();
-	cv::Mat mask;
-	switch (this->experiment.parameters.image_data) {
-	case BACKGROUND_IMAGE:
-		displayed_image = this->experiment.background;
-		break;
-	case CURRENT_FRAME:
-		displayed_image = read_frame (this->experiment.parameters, current_frame);
-		break;
-	case DIFF_BACKGROUND_IMAGE:
-		displayed_image = compute_difference_background_image (this->experiment.parameters, current_frame);
-		break;
-	case DIFF_PREVIOUS_IMAGE:
-		displayed_image = compute_difference_previous_image (this->experiment.parameters, current_frame);
-		break;
-	case SPECIAL_DATA:
-		displayed_image = compute_threshold_mask_diff_background_diff_previous (this->experiment.parameters, current_frame);
-		break;
-	case LIGHT_CALIBRATED_PLSM_METHOD:
-		displayed_image = light_calibrate (this->experiment, current_frame, x1, y1, x2, y2, light_calibrate_method_PLSM);
-		break;
-	case LIGHT_CALIBRATED_LC_METHOD:
-		displayed_image = light_calibrate (this->experiment, current_frame, x1, y1, x2, y2, light_calibrate_method_LC);
-		break;
-	case __NUMBER_IMAGE_DATA__:
-		break;
-	}
-	if (this->ui.cropToRectCheckBox->isChecked ())
-		displayed_image = cv::Mat (displayed_image, cv::Range (this->ui.y1SpinBox->value (), this->ui.y2SpinBox->value ()), cv::Range (this->ui.x1SpinBox->value (), this->ui.x2SpinBox->value ()));
-	if (this->ui.filterToIntensityCheckBox->isChecked ()) {
-		cv::Mat mask1, mask2, tmp_image;
-		double intensity_analyse = this->ui.intensityAnalyseSpinBox->value ();
-		double same_intensity_level = this->ui.sameColourThresholdSpinBox->value () * NUMBER_COLOUR_LEVELS / 100;
-		if (intensity_analyse > same_intensity_level) {
-			cv::threshold (displayed_image, mask1, intensity_analyse - same_intensity_level - 1, NUMBER_COLOUR_LEVELS, cv::THRESH_BINARY);
-			cv::threshold (displayed_image, tmp_image, intensity_analyse - same_intensity_level - 1, 0, cv::THRESH_TOZERO);
-		}
-		else  {
-			mask1 = cv::Mat::ones (displayed_image.size ().height, displayed_image.size ().width, CV_8UC1);
-			tmp_image = displayed_image;
-		}
-		if (intensity_analyse + same_intensity_level < NUMBER_COLOUR_LEVELS ) {
-			cv::threshold (displayed_image, mask2, intensity_analyse + same_intensity_level + 1, NUMBER_COLOUR_LEVELS, cv::THRESH_BINARY_INV);
-			cv::threshold (tmp_image, displayed_image, intensity_analyse + same_intensity_level + 1, 0, cv::THRESH_TOZERO_INV);
-		}
-		else {
-			mask2 = cv::Mat::ones (displayed_image.size ().height, displayed_image.size ().width, CV_8UC1);
-			displayed_image = tmp_image;
-		}
-		mask = mask1 & mask2;
-	}
-	else {
-		mask = cv::Mat::ones (displayed_image.size ().height, displayed_image.size ().width, CV_8UC1);
-	}
-	this->pixmap->setPixmap (QPixmap::fromImage (Mat2QImage (displayed_image, mask)));
-	this->ui.frameView->update ();
-}
 
 void VideoAnalyser::update_histogram_data (int current_frame)
 {
@@ -573,11 +551,11 @@ void VideoAnalyser::update_histogram_data (int current_frame)
 		const Histogram &histogram = (*this->experiment.histogram_frames_rect_raw) [current_frame];
 		this->ui.histogramSelectedFramesView->graph (2)->setData (X_COLOURS, histogram);
 	}
-	this->ui.histogramSelectedFramesView->graph (4)->setVisible (
-	         this->experiment.parameters.image_data == LIGHT_CALIBRATED_PLSM_METHOD ||
-	         this->experiment.parameters.image_data == LIGHT_CALIBRATED_LC_METHOD);
-	if (this->experiment.parameters.image_data == LIGHT_CALIBRATED_PLSM_METHOD ||
-	    this->experiment.parameters.image_data == LIGHT_CALIBRATED_LC_METHOD) {
+	bool display_histogram_displayed_image =
+	      this->ui.lightCalibratedLCMethodRadioButton->isChecked () ||
+	      this->ui.lightCalibratedPLSMMethodRadioButton->isChecked ();
+	this->ui.histogramSelectedFramesView->graph (4)->setVisible (display_histogram_displayed_image);
+	if (display_histogram_displayed_image) {
 		Histogram histogram;
 		compute_histogram (displayed_image, histogram);
 		this->ui.histogramSelectedFramesView->graph (4)->setData (X_COLOURS, histogram);
