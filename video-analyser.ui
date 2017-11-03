@@ -45,7 +45,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-245</y>
+         <y>-304</y>
          <width>288</width>
          <height>1236</height>
         </rect>
@@ -393,6 +393,9 @@
             <widget class="QCheckBox" name="showNumberBeesBeeSpeedPlotsHistogramEqualisationCheckBox">
              <property name="text">
               <string>histogram equalisation</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
