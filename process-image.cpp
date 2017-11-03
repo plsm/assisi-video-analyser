@@ -183,7 +183,7 @@ cv::Mat compute_difference_background_image (const UserParameters &parameters, i
 cv::Mat compute_difference_previous_image (const UserParameters &parameters, int index_frame)
 {
 	cv::Mat current_frame = read_frame (parameters, index_frame);
-	cv::Mat previous_frame = read_frame (parameters, index_frame - parameters.delta_frame);
+	cv::Mat previous_frame = read_frame (parameters, index_frame - parameters.delta_frame - 1);
 	cv::Mat diff;
 	cv::absdiff (previous_frame, current_frame, diff);
 	return diff;
