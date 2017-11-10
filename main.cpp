@@ -39,7 +39,6 @@ int main (int argc, char **argv)
 	UserParameters parameters = get_parameters (argc, argv);
 	QApplication a (argc, argv);
 	Experiment experiment (parameters);
-	StadiumArena3CASUs arena (parameters);
 	VideoAnalyser video_analyser (experiment);
 	video_analyser.show ();
 	return a.exec ();
