@@ -36,7 +36,7 @@ public:
 	}
 	std::string mask_filename (int index_mask) const
 	{
-		return this->folder + "Mask-" + std::to_string (index_mask) + ".jpg";
+		return this->folder + "Mask-" + std::to_string (index_mask + 1) + ".png";
 	}
 	std::string histogram_background_filename () const
 	{
