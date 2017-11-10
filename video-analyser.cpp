@@ -32,9 +32,11 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 {
 	ui.setupUi (this);
 	// default colours to use in plots to distinguish different ROIs
-	this->mask_colour.push_back (QColor ( 31, 119, 180, 192));
-	this->mask_colour.push_back (QColor (255, 127,  14, 192));
-	this->mask_colour.push_back (QColor ( 44, 160,  44, 192));
+	for (unsigned int i = 0; i < this->experiment.parameters.number_ROIs; i++) {
+		QColor color;
+		color.setHsl (i * 255 / (this->experiment.parameters.number_ROIs - 1), 255, 127, 192);
+		this->mask_colour.push_back (color);
+	}
 	// initialise the widget where an image is show
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 	scene->addItem (pixmap);
@@ -176,13 +178,7 @@ VideoAnalyser::VideoAnalyser (Experiment &experiment):
 	};
 	for (Graph_Info_2 gi : feature_info) {
 		for (unsigned int i = 0; i < experiment.parameters.number_ROIs; i++) {
-			QColor color = experiment.parameters.number_ROIs <= this->mask_colour.size () ?
-			         this->mask_colour [i] :
-			         QColor (
-			            255 * i / (experiment.parameters.number_ROIs - 1),
-			            255 * (experiment.parameters.number_ROIs - 1 - i) / (experiment.parameters.number_ROIs - 1),
-			            128,
-			            192);
+			QColor color = this->mask_colour [i];
 			graph = this->ui.plotNumberBeesView->addGraph ();
 			graph->setName (QString (("ROI " + to_string (i + 1) + " " + gi.label).c_str ()));
 			graph->setPen (QPen (color, 1, gi.pen_style));
