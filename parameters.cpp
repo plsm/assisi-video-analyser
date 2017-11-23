@@ -37,13 +37,15 @@ UserParameters UserParameters::parse (int argc, char *argv[])
 	const char *frame_file_type = "jpg";
 	unsigned int same_colour_threshold = 15;
 	unsigned int delta_frame = 2;
+	unsigned int number_ROIs = 3;
 	do {
 		static struct option long_options[] = {
 			{"folder"                , required_argument, 0, 'p' },
 			{"frame-file-type"       , required_argument, 0, 'f' },
 			{"same-colour-threshold" , required_argument, 0, 'c' },
 			{"delta-frame"           , required_argument, 0, 'd'},
-			{0,         0,                 0,  0 }
+		   {"number-ROIs"           , required_argument, 0, 'r'},
+		   {0,         0,                 0,  0 }
 		};
 		int c = getopt_long (argc, argv, "p:f:c:r:d:", long_options, 0);
 		switch (c) {
@@ -68,9 +70,11 @@ UserParameters UserParameters::parse (int argc, char *argv[])
 		case 'd':
 			delta_frame = (unsigned int) atoi (optarg);
 			break;
+		case 'r':
+			number_ROIs = (unsigned int) atoi (optarg);
 		}
 	} while (ok);
-	return UserParameters (folder, frame_file_type, 3, delta_frame, same_colour_threshold);
+	return UserParameters (folder, frame_file_type, number_ROIs, delta_frame, same_colour_threshold);
 }
 
 unsigned int RunParameters::compute_number_frames () const
@@ -104,6 +108,11 @@ UserParameters::UserParameters (const string &folder, const string &frame_file_t
    y1 (numeric_limits<int>::max ()),
    x2 (numeric_limits<int>::min ()),
    y2 (numeric_limits<int>::min ())
+{
+}
+
+UserParameters::UserParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs):
+   UserParameters (folder, frame_file_type, number_ROIs, 2, 15)
 {
 }
 

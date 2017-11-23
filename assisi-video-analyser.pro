@@ -14,7 +14,8 @@ QT       += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 # Input
-HEADERS += animate.hpp qcustomplot.h
+HEADERS += animate.hpp qcustomplot.h \
+    dialog-run-parameters.hpp
 HEADERS += process-image.hpp
 HEADERS += parameters.hpp
 HEADERS += util.hpp
@@ -22,8 +23,10 @@ HEADERS += image.hpp \
 	experiment.hpp \
         histogram.hpp \
 	video-analyser.hpp
-FORMS += video-analyser.ui
-SOURCES += animate.cpp main.cpp qcustomplot.cpp
+FORMS += video-analyser.ui \
+    dialog-run-parameters.ui
+SOURCES += animate.cpp main.cpp qcustomplot.cpp \
+    dialog-run-parameters.cpp
 SOURCES += process-image.cpp
 SOURCES += parameters.cpp
 SOURCES += util.cpp

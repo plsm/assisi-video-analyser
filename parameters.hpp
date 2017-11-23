@@ -178,6 +178,7 @@ public:
 	int x2;
 	int y2;
 	UserParameters ();
+	UserParameters (const std::string &folder, const std::string &frame_file_type, unsigned int number_ROIs);
 	static UserParameters parse (int argc, char *argv[]);
 	std::string features_pixel_count_difference_raw_filename () const
 	{
